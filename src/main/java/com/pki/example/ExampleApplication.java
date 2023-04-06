@@ -1,6 +1,7 @@
 package com.pki.example;
 
 import com.pki.example.certificates.CertificateExample;
+import com.pki.example.controller.AdminController;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +24,11 @@ public class ExampleApplication {
 	private static KeyStoreWriter keyStoreWriter;
 
 	private static ApplicationContext context;
+	private static AdminController adminController = new AdminController();
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		context = SpringApplication.run(ExampleApplication.class, args);
-
+		//adminController.genCA(context);
 		keyStoreReader = (KeyStoreReader) context.getBean("keyStoreReader");
 		keyStoreWriter = (KeyStoreWriter) context.getBean("keyStoreWriter");
 		certExample = (CertificateExample) context.getBean("certificateExample");
@@ -50,12 +52,17 @@ public class ExampleApplication {
 		System.out.println("Provera potpisa:");
 		// to do
 		try {
+			loadedCertificate.verify(certificate.getIssuer().getPublicKey());
 			((X509Certificate) loadedCertificate).checkValidity();
 				System.out.println("Certificate is valid.");
 		} catch (CertificateExpiredException e) {
 			System.out.println("Certificate has expired.");
 		} catch (CertificateNotYetValidException e) {
 			System.out.println("Certificate is not yet valid.");
+		} catch (CertificateException e) {
+			throw new RuntimeException(e);
+		} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
+			throw new RuntimeException(e);
 		}
 
 
