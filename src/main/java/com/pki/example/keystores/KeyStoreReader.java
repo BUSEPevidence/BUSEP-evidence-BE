@@ -13,6 +13,8 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
 
 @Component
 public class KeyStoreReader {
@@ -135,5 +137,132 @@ public class KeyStoreReader {
             e.printStackTrace();
         }
         return null;
+    }
+    public void showKeyStoreContent(String keystoreFile, String keystorePass) {
+        BufferedInputStream in = null;
+        try {
+            //KeyStore ks = KeyStore.getInstance("JKS", "SUN");
+            in = new BufferedInputStream(new FileInputStream(keystoreFile));
+
+            keyStore.load(in, keystorePass.toCharArray());
+
+            Enumeration<String> aliases = keyStore.aliases();
+
+
+            while (aliases.hasMoreElements()) {
+
+                String alias = aliases.nextElement();
+                System.out.println("ALIAS: " + alias);
+                if (keyStore.isCertificateEntry(alias)) {
+                    System.out.println(keyStore.getCertificate(alias));
+                } else {
+                    System.out.println("This entry is a key, so it needs keypass to be read.");
+                }
+            }
+
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public ArrayList<Integer> getKeyStoreAliases(String keystoreFile, String keystorePass) {
+        BufferedInputStream in = null;
+        ArrayList<Integer> aliasList = new ArrayList<Integer>();
+        try {
+            //KeyStore ks = KeyStore.getInstance("JKS", "SUN");
+            in = new BufferedInputStream(new FileInputStream(keystoreFile));
+
+            keyStore.load(in, keystorePass.toCharArray());
+
+            Enumeration<String> aliases = keyStore.aliases();
+
+
+            while (aliases.hasMoreElements()) {
+
+                String alias = aliases.nextElement();
+                System.out.println("ALIAS: " + alias);
+                if (keyStore.isCertificateEntry(alias)) {
+                    aliasList.add(Integer.parseInt(alias));
+                }
+            }
+
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return aliasList;
+    }
+
+    public ArrayList<Certificate> getKeyStoreContent(String keystoreFile, String keystorePass) {
+        BufferedInputStream in = null;
+        ArrayList<Certificate> certs = new ArrayList<Certificate>();
+        try {
+            //KeyStore ks = KeyStore.getInstance("JKS", "SUN");
+            in = new BufferedInputStream(new FileInputStream(keystoreFile));
+
+            keyStore.load(in, keystorePass.toCharArray());
+
+            Enumeration<String> aliases = keyStore.aliases();
+
+
+            while (aliases.hasMoreElements()) {
+
+                String alias = aliases.nextElement();
+                if (keyStore.isCertificateEntry(alias)) {
+                    certs.add(keyStore.getCertificate(alias));
+                }
+            }
+
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return certs;
     }
 }

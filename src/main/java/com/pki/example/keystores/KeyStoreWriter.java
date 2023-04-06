@@ -68,4 +68,11 @@ public class KeyStoreWriter {
             e.printStackTrace();
         }
     }
+    public void storeCertificate(String alias, Certificate cert) {
+        try {
+            keyStore.setCertificateEntry(alias, cert);
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        }
+    }
 }

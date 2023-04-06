@@ -10,9 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
 import java.security.*;
+import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 @SpringBootApplication
 public class ExampleApplication {
@@ -50,6 +49,15 @@ public class ExampleApplication {
 
 		System.out.println("Provera potpisa:");
 		// to do
+		try {
+			((X509Certificate) loadedCertificate).checkValidity();
+				System.out.println("Certificate is valid.");
+		} catch (CertificateExpiredException e) {
+			System.out.println("Certificate has expired.");
+		} catch (CertificateNotYetValidException e) {
+			System.out.println("Certificate is not yet valid.");
+		}
+
 
 	}
 
