@@ -8,6 +8,7 @@ import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.*;
@@ -42,9 +43,8 @@ public class AdminController {
         //Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
         //PublicKey pk = adminService.getIssuerFromKeyStore();
         //PublicKey pk = issuer.getPublicKey();
-        PublicKey pk = adminService.readPublicKeyFromKeyStore();
         Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        adminService.checkValidationOfSign("example","password","ca",pk);
+        adminService.checkValidationOfSign("example","password","ca");
 
 
     }
@@ -62,7 +62,7 @@ public class AdminController {
         String signer = "root";
         PrivateKey key = adminService.readKeyFromKeyStore(signer);
         X509Certificate cert = adminService.createCACertificate(x509Certificate,key, keyPair.getPublic(),5);
-        adminService.generateCert("example","CA","password",cert,keyPair);
+        adminService.generateCert("example","ca","password",cert,keyPair);
     }
     @GetMapping("/create-end-entity")
     public void createEndEntity() throws Exception {
@@ -76,12 +76,17 @@ public class AdminController {
     }
 
     @GetMapping("/revoke-certificate")
-    public void revokeCertificate(String alias,String keyStoreFileName,String password) throws Exception {
+    public void revokeCertificate(@RequestParam(value= "alias", required =true)String alias, @RequestParam(value= "keyStoreFileName", required =true)String keyStoreFileName,
+                                  @RequestParam(value= "password", required =true)String password) throws Exception {
         keyStoreReader = new KeyStoreReader();
-        alias = "cert8";
-        java.security.cert.Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + keyStoreFileName + ".jks", password, alias);
+        //String alias = "ca";
+        //String keyStoreFileName = "example";
+        //String password = "password";
+        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + keyStoreFileName + ".jks", password, alias);
         crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
     }
+
+
     private KeyPair generateKeyPair() {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");

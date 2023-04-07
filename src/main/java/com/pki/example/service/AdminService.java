@@ -154,8 +154,7 @@ public class AdminService {
         return loadedCertificate;
     }
 
-    public void checkValidationOfSign(String keyStoreFileName,String password,String alias,
-                                      PublicKey publicKey)
+    public void checkValidationOfSign(String keyStoreFileName,String password,String alias)
     {
         keyStoreReader = new KeyStoreReader();
         keyStoreWriter = new KeyStoreWriter();;
@@ -165,12 +164,19 @@ public class AdminService {
         System.out.println("Provera potpisa:");
         // to do
         try {
-            //if(crlService.getCRL("src/main/resources/static/CRL.jks")
-                    //.getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null) {
-                //System.out.println("CERTIFICATE IS REVOKED!");
-               // return;
-          //  }
-            loadedCertificate.verify(publicKey);
+            if(crlService.getCRL("src/main/resources/static/CRL.jks")
+                    .getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null) {
+                System.out.println("CERTIFICATE IS REVOKED!");
+                return;
+            }
+            PublicKey pubK = loadedCertificate.getPublicKey();
+            byte[] signatureValue = ((X509Certificate)loadedCertificate).getSignature();
+            Signature signature = Signature.getInstance("SHA256WithRSAEncryption");
+            signature.initVerify(pubK);
+            signature.update(((X509Certificate)loadedCertificate).getTBSCertificate());
+            signature.verify(signatureValue);
+
+
             ((X509Certificate) loadedCertificate).checkValidity();
             System.out.println("Certificate is valid.");
         } catch (CertificateExpiredException e) {
@@ -180,10 +186,9 @@ public class AdminService {
         } catch (CertificateException e) {
             throw new RuntimeException(e);
         }
-        catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
+        catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e.getMessage());
         }
-        System.out.println("Certificate is valid!");
     }
     public Subject generateSubject(String CN,String Surname,String Name,String O,String OU,String C,String Email,String UID) {
         KeyPair keyPairSubject = generateKeyPair();

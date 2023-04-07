@@ -1,5 +1,6 @@
 package com.pki.example.service;
 
+import com.pki.example.keystores.KeyStoreReader;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -25,6 +26,9 @@ import java.util.Date;
 
 @Service
 public class CRLService {
+
+
+    private static KeyStoreReader keyStoreReader;
     public static X509CRL createEmptyCRL(
             PrivateKey caKey,
             String sigAlg,
@@ -71,11 +75,11 @@ public class CRLService {
     }
 
     public void revokeCertificate(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
-    try {
-        System.out.println(CRLKeyStore + " XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        try {
         X509CRL crl = getCRL("src/main/resources/static/" + CRLKeyStore + "CRL.jks");
         crl = addRevocationToCRL(caKey,sigAlg,crl,certificate);
         saveCRLToFile(crl,"src/main/resources/static/" + CRLKeyStore + "CRL.jks");
+        CRLService crlService = new CRLService();
     }
     catch (Exception e){
         e.getMessage();

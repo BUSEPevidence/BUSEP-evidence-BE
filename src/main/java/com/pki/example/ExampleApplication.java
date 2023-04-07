@@ -57,12 +57,11 @@ public class ExampleApplication {
 		PrivateKey PrivK = keyGen.generateKeyPair().getPrivate();
 
 		//Kreiranje nove CRL liste:
-		//X509CRL crl = CRLService.createEmptyCRL(PrivK,"SHA256WithRSAEncryption",certificate.getX509Certificate());
-		//CRLService.saveCRLToFile(crl,"src/main/resources/static/CRL.jks");
+		X509CRL crl = CRLService.createEmptyCRL(PrivK,"SHA256WithRSAEncryption",certificate.getX509Certificate());
+		CRLService.saveCRLToFile(crl,"src/main/resources/static/CRL.jks");
 
-
-		//CRLService.revokeCertificate("src/main/resources/static/CRL.jks",(X509Certificate)loadedCertificate, PrivK,"SHA256WithRSAEncryption");
-
+		CRLService crlService = new CRLService();
+		//crlService.revokeCertificate("",(X509Certificate)loadedCertificate, PrivK,"SHA256WithRSAEncryption");
 
 	}
 
