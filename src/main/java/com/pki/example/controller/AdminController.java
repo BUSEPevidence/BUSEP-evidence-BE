@@ -24,11 +24,10 @@ public class AdminController {
     public void genCA() throws Exception {
         Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
         Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        com.pki.example.data.Certificate certificate = adminService.getCertificate(issuer,subject,"2023-03-23","2028-03-23");
+        com.pki.example.data.Certificate certificate = adminService.getEndEntityCertificate(issuer,subject,"2023-03-23","2028-03-23");
         //adminService.checkValidationOfSign("proba","certificate","123",certificate);
         adminService.generateCertificate("example","cert8","password",certificate);
         publicKey = issuer.getPublicKey();
-
     }
     @GetMapping("/certificate-validity")
     public void checkValidity() throws Exception {
