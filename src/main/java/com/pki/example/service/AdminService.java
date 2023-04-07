@@ -232,7 +232,7 @@ public class AdminService {
         return BigInteger.valueOf(serialNumberBase++);
     }
     public static X509Certificate createTrustAnchor(
-            KeyPair keyPair, String sigAlg)
+            KeyPair keyPair)
             throws OperatorCreationException, CertificateException
     {
         X500Name name = new X500Name("CN=Trust Anchor");
@@ -247,7 +247,7 @@ public class AdminService {
                 keyPair.getPublic());
 
 
-        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(keyPair.getPrivate());
 
 
