@@ -105,14 +105,14 @@ public class AdminService {
 
     }
 
-    public PrivateKey readKeyFromKeyStore() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    public PrivateKey readKeyFromKeyStore(String signer) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
         keyStoreReader = new KeyStoreReader();
         keyStoreWriter = new KeyStoreWriter();
 
         KeyStore keystore = KeyStore.getInstance("JKS");
         BufferedInputStream in = new BufferedInputStream(new FileInputStream("src/main/resources/static/example.jks"));
         keystore.load(in, "password".toCharArray());
-        Key key = keystore.getKey("root", "password".toCharArray());
+        Key key = keystore.getKey(signer, "password".toCharArray());
         if (key instanceof PrivateKey) {
             return (PrivateKey) key;
         } else {

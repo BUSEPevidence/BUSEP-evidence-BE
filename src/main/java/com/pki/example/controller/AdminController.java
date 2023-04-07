@@ -40,7 +40,7 @@ public class AdminController {
 
 
     }
-    @GetMapping("/root")
+    @GetMapping("/create-root")
     public void createRoot() throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
         X509Certificate certificate = adminService.createTrustAnchor(keyPair);
@@ -51,8 +51,19 @@ public class AdminController {
         KeyPair keyPair = adminService.generateKeyPair();
         Certificate certificate = adminService.readCertificateFromKeyStore("example","password","root");
         X509Certificate x509Certificate = (X509Certificate) certificate;
-        PrivateKey key = adminService.readKeyFromKeyStore();
+        String signer = "root";
+        PrivateKey key = adminService.readKeyFromKeyStore(signer);
         X509Certificate cert = adminService.createCACertificate(x509Certificate,key, keyPair.getPublic(),5);
         adminService.generateCert("example","CA","password",cert,keyPair);
+    }
+    @GetMapping("/create-end-entity")
+    public void createEndEntity() throws Exception {
+        KeyPair keyPair = adminService.generateKeyPair();
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","ca");
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+        String signer = "ca";
+        PrivateKey key = adminService.readKeyFromKeyStore(signer);
+        X509Certificate cert = adminService.createEndEntity(x509Certificate,key,keyPair.getPublic());
+        adminService.generateCert("example","endEntity","password",cert,keyPair);
     }
 }
