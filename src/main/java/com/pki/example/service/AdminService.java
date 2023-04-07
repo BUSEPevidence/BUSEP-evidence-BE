@@ -258,7 +258,7 @@ public class AdminService {
     }
     public static X509Certificate createEndEntity(
             X509Certificate signerCert, PrivateKey signerKey,
-            String sigAlg, PublicKey certKey)
+            PublicKey certKey)
             throws CertIOException, OperatorCreationException, CertificateException
     {
         X500Principal subject = new X500Principal("CN=End Entity");
@@ -279,7 +279,7 @@ public class AdminService {
                         true, new KeyUsage(KeyUsage.digitalSignature));
 
 
-        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(signerKey);
 
 
@@ -290,7 +290,7 @@ public class AdminService {
     }
     public static X509Certificate createCACertificate(
             X509Certificate signerCert, PrivateKey signerKey,
-            String sigAlg, PublicKey certKey, int followingCACerts)
+             PublicKey certKey, int followingCACerts)
             throws GeneralSecurityException,
             OperatorCreationException, CertIOException
     {
@@ -316,7 +316,7 @@ public class AdminService {
                                 | KeyUsage.cRLSign));
 
 
-        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(signerKey);
 
 
