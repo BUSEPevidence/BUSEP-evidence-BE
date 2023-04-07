@@ -56,7 +56,7 @@ public class CRLService {
         return converter.getCRL(crlGen.build(signer));
     }
 
-    public static X509CRL getCRL(String path){
+    public X509CRL getCRL(String path){
         try {
             FileInputStream crlStream = new FileInputStream(path);
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -70,18 +70,19 @@ public class CRLService {
         return null;
     }
 
-    public static void revokeCertificate(String CRLPath, X509Certificate certificate,PrivateKey caKey,String sigAlg){
+    public void revokeCertificate(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
     try {
-        X509CRL crl = getCRL(CRLPath);
+        System.out.println(CRLKeyStore + " XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        X509CRL crl = getCRL("src/main/resources/static/" + CRLKeyStore + "CRL.jks");
         crl = addRevocationToCRL(caKey,sigAlg,crl,certificate);
-        saveCRLToFile(crl,CRLPath);
+        saveCRLToFile(crl,"src/main/resources/static/" + CRLKeyStore + "CRL.jks");
     }
     catch (Exception e){
         e.getMessage();
     }
     }
 
-    public static X509CRL addRevocationToCRL(
+    public X509CRL addRevocationToCRL(
             PrivateKey caKey,
             String sigAlg,
             X509CRL crl,

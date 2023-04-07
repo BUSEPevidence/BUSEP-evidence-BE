@@ -57,33 +57,11 @@ public class ExampleApplication {
 		PrivateKey PrivK = keyGen.generateKeyPair().getPrivate();
 
 		//Kreiranje nove CRL liste:
-		X509CRL crl = CRLService.createEmptyCRL(PrivK,"SHA256WithRSAEncryption",certificate.getX509Certificate());
-		CRLService.saveCRLToFile(crl,"src/main/resources/static/CRL.jks");
-
+		//X509CRL crl = CRLService.createEmptyCRL(PrivK,"SHA256WithRSAEncryption",certificate.getX509Certificate());
+		//CRLService.saveCRLToFile(crl,"src/main/resources/static/CRL.jks");
 
 
 		//CRLService.revokeCertificate("src/main/resources/static/CRL.jks",(X509Certificate)loadedCertificate, PrivK,"SHA256WithRSAEncryption");
-
-		System.out.println("Provera potpisa:");
-		// to do
-		try {
-			if(CRLService.getCRL("src/main/resources/static/CRL.jks")
-					.getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null){
-				System.out.println("CERTIFICATE IS REVOKED!");
-				return;
-			}
-			loadedCertificate.verify(certificate.getIssuer().getPublicKey());
-			((X509Certificate) loadedCertificate).checkValidity();
-				System.out.println("Certificate is valid.");
-		} catch (CertificateExpiredException e) {
-			System.out.println("Certificate has expired.");
-		} catch (CertificateNotYetValidException e) {
-			System.out.println("Certificate is not yet valid.");
-		} catch (CertificateException e) {
-			throw new RuntimeException(e);
-		} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
-			throw new RuntimeException(e);
-		}
 
 
 	}

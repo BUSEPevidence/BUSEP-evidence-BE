@@ -2,14 +2,21 @@ package com.pki.example.controller;
 
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
+import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
+import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+<<<<<<< HEAD
 import java.security.*;
 import java.security.cert.Certificate;
+=======
+import java.math.BigInteger;
+import java.security.*;
+>>>>>>> 56503d3 (in progress)
 import java.security.cert.X509Certificate;
 
 @RestController
@@ -18,6 +25,10 @@ public class AdminController {
 
     @Autowired
     AdminService adminService = new AdminService();
+    @Autowired
+    CRLService crlService = new CRLService();
+
+    private static KeyStoreReader keyStoreReader;
     PublicKey publicKey;
     Issuer issuer;
     @GetMapping("/generate-certificate")
@@ -66,4 +77,27 @@ public class AdminController {
         X509Certificate cert = adminService.createEndEntity(x509Certificate,key,keyPair.getPublic());
         adminService.generateCert("example","endEntity","password",cert,keyPair);
     }
+
+    @GetMapping("/revoke-certificate")
+    public void revokeCertificate(String alias,String keyStoreFileName,String password) throws Exception {
+        keyStoreReader = new KeyStoreReader();
+        alias = "cert8";
+        java.security.cert.Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + keyStoreFileName + ".jks", password, alias);
+        crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
+    }
+    private KeyPair generateKeyPair() {
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+            keyGen.initialize(2048, random);
+            return keyGen.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
 }

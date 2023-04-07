@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,9 @@ public class AdminService {
     private static KeyStoreWriter keyStoreWriter;
 
     private static ApplicationContext context;
+
+    @Autowired
+    private CRLService crlService = new CRLService();
 
 
     public com.pki.example.data.Certificate generateCertificate(String keyStoreFileName,String certificateName,String keyStorePassword,com.pki.example.data.Certificate cert)
@@ -161,6 +165,11 @@ public class AdminService {
         System.out.println("Provera potpisa:");
         // to do
         try {
+            //if(crlService.getCRL("src/main/resources/static/CRL.jks")
+                    //.getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null) {
+                //System.out.println("CERTIFICATE IS REVOKED!");
+               // return;
+          //  }
             loadedCertificate.verify(publicKey);
             ((X509Certificate) loadedCertificate).checkValidity();
             System.out.println("Certificate is valid.");
@@ -170,10 +179,11 @@ public class AdminService {
             System.out.println("Certificate is not yet valid.");
         } catch (CertificateException e) {
             throw new RuntimeException(e);
-          }
+        }
         catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
             throw new RuntimeException(e.getMessage());
         }
+        System.out.println("Certificate is valid!");
     }
     public Subject generateSubject(String CN,String Surname,String Name,String O,String OU,String C,String Email,String UID) {
         KeyPair keyPairSubject = generateKeyPair();
