@@ -25,21 +25,30 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.cert.X509v2CRLBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.UUID;
+import java.util.GregorianCalendar;
 
 @Service
 public class AdminService {
@@ -109,7 +118,7 @@ public class AdminService {
             throw new RuntimeException(e);
           }
         catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
     public Subject generateSubject(String CN,String Surname,String Name,String O,String OU,String C,String Email,String UID) {
@@ -347,4 +356,5 @@ public class AdminService {
         }
         return issuerPublicKey;
     }
+
 }
