@@ -83,11 +83,65 @@ public class AdminService {
 
 
     }
+    public X509Certificate generateCert(String keyStoreFileName,String certificateName,String keyStorePassword,X509Certificate cert,KeyPair keyPair)
+    {
+        keyStoreReader = new KeyStoreReader();
+        keyStoreWriter = new KeyStoreWriter();
+        //certExample = (CertificateExample) context.getBean("certificateExample");
+
+        System.out.println("Novi sertifikat:");
+        System.out.println(cert);
+
+        // Inicijalizacija fajla za cuvanje sertifikata
+        System.out.println("Cuvanje certifikata u jks fajl:");
+        keyStoreWriter.loadKeyStore("src/main/resources/static/" + keyStoreFileName + ".jks",  keyStorePassword.toCharArray());
+        PrivateKey pk = keyPair.getPrivate();
+        keyStoreWriter.write(certificateName, pk, keyStorePassword.toCharArray(), cert);
+        keyStoreWriter.saveKeyStore("src/main/resources/static/"  + keyStoreFileName + ".jks",  keyStorePassword.toCharArray());
+        System.out.println("Cuvanje certifikata u jks fajl zavrseno.");
+        return cert;
+
+
+
+    }
+
+    public PrivateKey readKeyFromKeyStore(String signer) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        keyStoreReader = new KeyStoreReader();
+        keyStoreWriter = new KeyStoreWriter();
+
+        KeyStore keystore = KeyStore.getInstance("JKS");
+        BufferedInputStream in = new BufferedInputStream(new FileInputStream("src/main/resources/static/example.jks"));
+        keystore.load(in, "password".toCharArray());
+        Key key = keystore.getKey(signer, "password".toCharArray());
+        if (key instanceof PrivateKey) {
+            return (PrivateKey) key;
+        } else {
+            throw new IllegalStateException("Private key not found in keystore");
+        }
+
+    }
+    public PublicKey readPublicKeyFromKeyStore() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        KeyStoreReader keyStoreReader = new KeyStoreReader();
+
+        KeyStore keystore = KeyStore.getInstance("JKS");
+        BufferedInputStream in = new BufferedInputStream(new FileInputStream("src/main/resources/static/example.jks"));
+        keystore.load(in, "password".toCharArray());
+
+        // Get the certificate from the keystore using the alias
+        Certificate cert = keystore.getCertificate("ca");
+        if (cert != null) {
+            // Extract the public key from the certificate
+            PublicKey publicKey = cert.getPublicKey();
+            return publicKey;
+        } else {
+            throw new IllegalStateException("Certificate not found in keystore");
+        }
+
+    }
     public Certificate readCertificateFromKeyStore(String keyStoreFileName,String password,String alias)
     {
-        keyStoreReader = (KeyStoreReader) context.getBean("keyStoreReader");
-        keyStoreWriter = (KeyStoreWriter) context.getBean("keyStoreWriter");
-        certExample = (CertificateExample) context.getBean("certificateExample");
+        keyStoreReader = new KeyStoreReader();
+        keyStoreWriter = new KeyStoreWriter();
 
         System.out.println("Ucitavanje sertifikata iz jks fajla:");
         Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + keyStoreFileName + ".jks", password, alias);
@@ -138,7 +192,7 @@ public class AdminService {
 
         return new Subject(keyPairSubject.getPublic(), builder.build());
     }
-    private KeyPair generateKeyPair() {
+    public KeyPair generateKeyPair() {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
@@ -232,7 +286,7 @@ public class AdminService {
         return BigInteger.valueOf(serialNumberBase++);
     }
     public static X509Certificate createTrustAnchor(
-            KeyPair keyPair, String sigAlg)
+            KeyPair keyPair)
             throws OperatorCreationException, CertificateException
     {
         X500Name name = new X500Name("CN=Trust Anchor");
@@ -247,7 +301,7 @@ public class AdminService {
                 keyPair.getPublic());
 
 
-        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(keyPair.getPrivate());
 
 
@@ -258,7 +312,7 @@ public class AdminService {
     }
     public static X509Certificate createEndEntity(
             X509Certificate signerCert, PrivateKey signerKey,
-            String sigAlg, PublicKey certKey)
+            PublicKey certKey)
             throws CertIOException, OperatorCreationException, CertificateException
     {
         X500Principal subject = new X500Principal("CN=End Entity");
@@ -279,7 +333,7 @@ public class AdminService {
                         true, new KeyUsage(KeyUsage.digitalSignature));
 
 
-        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(signerKey);
 
 
@@ -288,9 +342,10 @@ public class AdminService {
 
         return converter.getCertificate(certBldr.build(signer));
     }
+
     public static X509Certificate createCACertificate(
             X509Certificate signerCert, PrivateKey signerKey,
-            String sigAlg, PublicKey certKey, int followingCACerts)
+             PublicKey certKey, int followingCACerts)
             throws GeneralSecurityException,
             OperatorCreationException, CertIOException
     {
@@ -316,7 +371,7 @@ public class AdminService {
                                 | KeyUsage.cRLSign));
 
 
-        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(signerKey);
 
 

@@ -1,16 +1,16 @@
 package com.pki.example.controller;
 
-import com.pki.example.data.Certificate;
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
 import com.pki.example.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.PublicKey;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 @RestController
 @RequestMapping("/admin")
@@ -25,19 +25,45 @@ public class AdminController {
         Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
         Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
         com.pki.example.data.Certificate certificate = adminService.getEndEntityCertificate(issuer,subject,"2023-03-23","2028-03-23");
-        //adminService.checkValidationOfSign("proba","certificate","123",certificate);
-        adminService.generateCertificate("example","cert8","password",certificate);
+        adminService.generateCertificate("example","certTest","password",certificate);
         publicKey = issuer.getPublicKey();
     }
     @GetMapping("/certificate-validity")
     public void checkValidity() throws Exception {
 
         //Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
-        PublicKey pk = adminService.getIssuerFromKeyStore();
+        //PublicKey pk = adminService.getIssuerFromKeyStore();
         //PublicKey pk = issuer.getPublicKey();
+        PublicKey pk = adminService.readPublicKeyFromKeyStore();
         Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        adminService.checkValidationOfSign("example","password","cert8",pk);
+        adminService.checkValidationOfSign("example","password","ca",pk);
 
 
+    }
+    @GetMapping("/create-root")
+    public void createRoot() throws Exception {
+        KeyPair keyPair = adminService.generateKeyPair();
+        X509Certificate certificate = adminService.createTrustAnchor(keyPair);
+        adminService.generateCert("example","root","password",certificate,keyPair);
+    }
+    @GetMapping("/create-ca")
+    public void createCA() throws Exception {
+        KeyPair keyPair = adminService.generateKeyPair();
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","root");
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+        String signer = "root";
+        PrivateKey key = adminService.readKeyFromKeyStore(signer);
+        X509Certificate cert = adminService.createCACertificate(x509Certificate,key, keyPair.getPublic(),5);
+        adminService.generateCert("example","CA","password",cert,keyPair);
+    }
+    @GetMapping("/create-end-entity")
+    public void createEndEntity() throws Exception {
+        KeyPair keyPair = adminService.generateKeyPair();
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","ca");
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+        String signer = "ca";
+        PrivateKey key = adminService.readKeyFromKeyStore(signer);
+        X509Certificate cert = adminService.createEndEntity(x509Certificate,key,keyPair.getPublic());
+        adminService.generateCert("example","endEntity","password",cert,keyPair);
     }
 }
