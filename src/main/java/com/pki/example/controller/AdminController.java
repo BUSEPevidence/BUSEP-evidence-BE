@@ -10,13 +10,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-<<<<<<< HEAD
 import java.security.*;
 import java.security.cert.Certificate;
-=======
 import java.math.BigInteger;
 import java.security.*;
->>>>>>> 56503d3 (in progress)
 import java.security.cert.X509Certificate;
 
 @RestController
