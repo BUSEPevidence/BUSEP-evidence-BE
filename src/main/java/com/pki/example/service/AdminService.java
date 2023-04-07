@@ -11,15 +11,27 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.*;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
@@ -27,6 +39,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.UUID;
 
 @Service
 public class AdminService {
@@ -146,7 +159,7 @@ public class AdminService {
         // - podatke o vlasniku sertifikata koji izdaje nov sertifikat
         return new Issuer(kp.getPrivate(), kp.getPublic(), builder.build());
     }
-    public com.pki.example.data.Certificate getCertificate(Issuer issuerData,Subject subjectData,String startValidDate,String endValidDate) {
+    public com.pki.example.data.Certificate getEndEntityCertificate(Issuer issuerData,Subject subjectData,String startValidDate,String endValidDate) {
 
         try {
             Issuer issuer = issuerData;
@@ -167,6 +180,141 @@ public class AdminService {
         }
 
         return null;
+    }
+    public com.pki.example.data.Certificate getSelfSignedCertificate(Issuer issuerData,String startValidDate,String endValidDate) {
+
+        try {
+            Issuer issuer = issuerData;
+            Subject subject = new Subject();
+
+            //Datumi od kad do kad vazi sertifikat
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date startDate = sdf.parse(startValidDate);
+            Date endDate = sdf.parse(endValidDate);
+
+            X509Certificate certificate = CertificateGenerator.generateCertificate(subject,
+                    issuer, startDate, endDate, "1");
+
+            return new com.pki.example.data.Certificate(subject, issuer,
+                    "1", startDate, endDate, certificate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    public static Date calculateDate(int hoursInFuture)
+    {
+        long secs = System.currentTimeMillis() / 1000;
+
+
+        return new Date((secs + (hoursInFuture * 60 * 60)) * 1000);
+    }
+    private static long serialNumberBase = System.currentTimeMillis();
+
+
+    /**
+     * Calculate a serial number using a monotonically increasing value.
+     *
+     * @return a BigInteger representing the next serial number in the sequence.
+     */
+    public static synchronized BigInteger calculateSerialNumber()
+    {
+        return BigInteger.valueOf(serialNumberBase++);
+    }
+    public static X509Certificate createTrustAnchor(
+            KeyPair keyPair, String sigAlg)
+            throws OperatorCreationException, CertificateException
+    {
+        X500Name name = new X500Name("CN=Trust Anchor");
+
+
+        X509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
+                name,
+                calculateSerialNumber(),
+                calculateDate(0),
+                calculateDate(24 * 365),
+                name,
+                keyPair.getPublic());
+
+
+        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+                .setProvider("BC").build(keyPair.getPrivate());
+
+
+        JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
+
+
+        return converter.getCertificate(certBldr.build(signer));
+    }
+    public static X509Certificate createEndEntity(
+            X509Certificate signerCert, PrivateKey signerKey,
+            String sigAlg, PublicKey certKey)
+            throws CertIOException, OperatorCreationException, CertificateException
+    {
+        X500Principal subject = new X500Principal("CN=End Entity");
+
+
+        X509v3CertificateBuilder  certBldr = new JcaX509v3CertificateBuilder(
+                signerCert.getSubjectX500Principal(),
+                calculateSerialNumber(),
+                calculateDate(0),
+                calculateDate(24 * 31),
+                subject,
+                certKey);
+
+
+        certBldr.addExtension(org.bouncycastle.asn1.x509.Extension.basicConstraints,
+                        true, new BasicConstraints(false))
+                .addExtension(org.bouncycastle.asn1.x509.Extension.keyUsage,
+                        true, new KeyUsage(KeyUsage.digitalSignature));
+
+
+        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+                .setProvider("BC").build(signerKey);
+
+
+        JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
+
+
+        return converter.getCertificate(certBldr.build(signer));
+    }
+    public static X509Certificate createCACertificate(
+            X509Certificate signerCert, PrivateKey signerKey,
+            String sigAlg, PublicKey certKey, int followingCACerts)
+            throws GeneralSecurityException,
+            OperatorCreationException, CertIOException
+    {
+        X500Principal subject = new X500Principal("CN=Certificate Authority");
+
+
+        X509v3CertificateBuilder certBldr = new JcaX509v3CertificateBuilder(
+                signerCert.getSubjectX500Principal(),
+                calculateSerialNumber(),
+                calculateDate(0),
+                calculateDate(24 * 60),
+                subject,
+                certKey);
+
+
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+
+        certBldr.addExtension(org.bouncycastle.asn1.x509.Extension.basicConstraints,
+                        true, new BasicConstraints(followingCACerts))
+                .addExtension(org.bouncycastle.asn1.x509.Extension.keyUsage,
+                        true, new KeyUsage(KeyUsage.keyCertSign
+                                | KeyUsage.cRLSign));
+
+
+        ContentSigner signer = new JcaContentSignerBuilder(sigAlg)
+                .setProvider("BC").build(signerKey);
+
+
+        JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
+
+
+        return converter.getCertificate(certBldr.build(signer));
     }
     public PublicKey getIssuerFromKeyStore() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());

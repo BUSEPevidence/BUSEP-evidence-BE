@@ -68,7 +68,7 @@ public class CertificateExample {
     }
 
     public com.pki.example.data.Certificate getCertificate() {
-
+        long serialNumberBase = System.currentTimeMillis();
         try {
             Issuer issuer = generateIssuer();
             Subject subject = generateSubject();
@@ -79,10 +79,10 @@ public class CertificateExample {
             Date endDate = sdf.parse("2028-03-25");
 
             X509Certificate certificate = CertificateGenerator.generateCertificate(subject,
-                    issuer, startDate, endDate, "1");
+                    issuer, startDate, endDate, String.valueOf(serialNumberBase++));
 
             return new com.pki.example.data.Certificate(subject, issuer,
-                    "1", startDate, endDate, certificate);
+                    String.valueOf(serialNumberBase++), startDate, endDate, certificate);
         } catch (ParseException e) {
             e.printStackTrace();
         }
