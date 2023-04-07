@@ -4,12 +4,14 @@ import com.pki.example.certificates.CertificateExample;
 import com.pki.example.controller.AdminController;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
+import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationContextFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
+import java.io.FileInputStream;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
@@ -49,9 +51,27 @@ public class ExampleApplication {
 		Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/example.jks", "password", "cert1");
 		System.out.println(loadedCertificate);
 
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+		SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+		keyGen.initialize(2048, random);
+		PrivateKey PrivK = keyGen.generateKeyPair().getPrivate();
+
+		//Kreiranje nove CRL liste:
+		X509CRL crl = CRLService.createEmptyCRL(PrivK,"SHA256WithRSAEncryption",certificate.getX509Certificate());
+		CRLService.saveCRLToFile(crl,"src/main/resources/static/CRL.jks");
+
+
+
+		//CRLService.revokeCertificate("src/main/resources/static/CRL.jks",(X509Certificate)loadedCertificate, PrivK,"SHA256WithRSAEncryption");
+
 		System.out.println("Provera potpisa:");
 		// to do
 		try {
+			if(CRLService.getCRL("src/main/resources/static/CRL.jks")
+					.getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null){
+				System.out.println("CERTIFICATE IS REVOKED!");
+				return;
+			}
 			loadedCertificate.verify(certificate.getIssuer().getPublicKey());
 			((X509Certificate) loadedCertificate).checkValidity();
 				System.out.println("Certificate is valid.");
