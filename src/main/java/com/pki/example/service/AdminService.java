@@ -33,7 +33,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,11 +48,7 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.UUID;
-import java.util.GregorianCalendar;
+import java.util.*;
 
 @Service
 public class AdminService {
@@ -426,5 +425,109 @@ public class AdminService {
         }
         return issuerPublicKey;
     }
+    public X509Certificate printCertificateInfo(X509Certificate xcertificate) {
+        Map<String, Certificate> certificatesMap = new HashMap<>();
+        try {
+            // Load the keystore
 
+            KeyStoreReader keyStoreReader = new KeyStoreReader();
+            KeyStore keystore = KeyStore.getInstance("JKS");
+            keystore.load(new FileInputStream("src/main/resources/static/example.jks"), "password".toCharArray());
+
+            // Retrieve all certificates from the keystore
+            String issuerCN = extractSubjectCN(xcertificate);
+            Enumeration<String> aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                Certificate certificate = keystore.getCertificate(alias);
+                certificatesMap.put(alias, certificate);
+                System.out.println("Alias: " + alias);
+                System.out.println("Certificate: " + certificate);
+                X509Certificate keyStoreX509Certificate = (X509Certificate)certificate;
+                if(issuerCN.equals(extractIssuerCN(keyStoreX509Certificate)))
+                {
+                    Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", alias);
+                    crlService.revCert("", (X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
+                    System.out.println("Nasao issuera " + extractIssuerCN(keyStoreX509Certificate) + " == " + issuerCN);
+                    return keyStoreX509Certificate;
+                }
+                else
+                {
+                    continue;
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public Map getAllCertificatesSignBy(X509Certificate xcertificate) {
+        Map<String, Certificate> certificatesMap = new HashMap<>();
+        try {
+            // Load the keystore
+
+            KeyStoreReader keyStoreReader = new KeyStoreReader();
+            KeyStore keystore = KeyStore.getInstance("JKS");
+            keystore.load(new FileInputStream("src/main/resources/static/example.jks"), "password".toCharArray());
+
+            // Retrieve all certificates from the keystore
+            String issuerCN = extractSubjectCN(xcertificate);
+            Enumeration<String> aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                Certificate certificate = keystore.getCertificate(alias);
+
+                System.out.println("Alias: " + alias);
+                System.out.println("Certificate: " + certificate);
+                X509Certificate keyStoreX509Certificate = (X509Certificate)certificate;
+                if(issuerCN.equals(extractIssuerCN(keyStoreX509Certificate)))
+                {
+                    certificatesMap.put(alias, certificate);
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return certificatesMap;
+    }
+
+
+    public static String extractIssuerCN(X509Certificate certificate) {
+        // Get the issuer distinguished name (DN) from the certificate
+        String issuerDN = certificate.getIssuerDN().getName();
+
+        // Split the issuer DN into individual attribute-value pairs
+        String[] issuerAttrs = issuerDN.split(",");
+
+        // Loop through the attribute-value pairs to find the Common Name (CN)
+        for (String attr : issuerAttrs) {
+            if (attr.trim().startsWith("CN=")) {
+                // Extract the CN value by removing the "CN=" prefix
+                return attr.trim().substring(3);
+            }
+        }
+
+        // If CN is not found, return null
+        return null;
+    }
+    public static String extractSubjectCN(X509Certificate certificate) {
+        // Get the subject distinguished name (DN) from the certificate
+        String subjectDN = certificate.getSubjectDN().getName();
+
+        // Split the subject DN into individual attribute-value pairs
+        String[] subjectAttrs = subjectDN.split(",");
+
+        // Loop through the attribute-value pairs to find the Common Name (CN)
+        for (String attr : subjectAttrs) {
+            if (attr.trim().startsWith("CN=")) {
+                // Extract the CN value by removing the "CN=" prefix
+                return attr.trim().substring(3);
+            }
+        }
+
+        // If CN is not found, return null
+        return null;
+    }
 }

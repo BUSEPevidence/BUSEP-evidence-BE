@@ -16,12 +16,9 @@ import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
+import java.security.*;
+import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509CRL;
-import java.security.cert.X509Certificate;
 import java.util.Date;
 
 @Service
@@ -73,18 +70,72 @@ public class CRLService {
         }
         return null;
     }
+    public void revCert(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
+        try {
+            System.out.println("Usao u revCert");
+            System.out.println(certificate);
+            AdminService adminService = new AdminService();
+            X509CRL crl = getCRL("src/main/resources/static/" + CRLKeyStore + "CRL.jks");
+            crl = addRevocationToCRL(caKey,sigAlg,crl,certificate);
+            saveCRLToFile(crl,"src/main/resources/static/" + CRLKeyStore + "CRL.jks");
+            CRLService crlService = new CRLService();
+            crlService.checkRevoked(certificate);
+        }
+        catch (Exception e){
+            e.getMessage();
+        }
+    }
 
     public void revokeCertificate(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
         try {
-        X509CRL crl = getCRL("src/main/resources/static/" + CRLKeyStore + "CRL.jks");
-        crl = addRevocationToCRL(caKey,sigAlg,crl,certificate);
-        saveCRLToFile(crl,"src/main/resources/static/" + CRLKeyStore + "CRL.jks");
-        CRLService crlService = new CRLService();
+            AdminService adminService = new AdminService();
+            String crlFilePath = "src/main/resources/static/" + CRLKeyStore + "CRL.jks";
+            X509CRL crl = getCRL(crlFilePath);
+            crl = addRevocationToCRL(caKey, sigAlg, crl, certificate);
+            saveCRLToFile(crl, crlFilePath);
+            CRLService crlService = new CRLService();
+            X509Certificate cert = adminService.printCertificateInfo(certificate);
+
+
     }
     catch (Exception e){
         e.getMessage();
     }
     }
+    public void checkRevoked(X509Certificate cert)
+    {
+        try {
+            FileInputStream fileInputStream = new FileInputStream("src/main/resources/static/CRL.jks");
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            CRL crl = cf.generateCRL(fileInputStream);
+            fileInputStream.close();
+
+            // Access the CRL contents and perform checks as needed
+            // For example, you can check if the certificate you're interested in is revoked
+            if (crl.isRevoked(cert)) {
+                System.out.println("Certificate is revoked.");
+            } else {
+                System.out.println("Certificate is not revoked.");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private KeyPair generateKeyPair() {
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+            keyGen.initialize(2048, random);
+            return keyGen.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     public X509CRL addRevocationToCRL(
             PrivateKey caKey,
