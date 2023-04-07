@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,9 @@ public class AdminService {
     private static KeyStoreWriter keyStoreWriter;
 
     private static ApplicationContext context;
+
+    @Autowired
+    private CRLService crlService = new CRLService();
 
 
     public com.pki.example.data.Certificate generateCertificate(String keyStoreFileName,String certificateName,String keyStorePassword,com.pki.example.data.Certificate cert)
@@ -150,8 +154,7 @@ public class AdminService {
         return loadedCertificate;
     }
 
-    public void checkValidationOfSign(String keyStoreFileName,String password,String alias,
-                                      PublicKey publicKey)
+    public void checkValidationOfSign(String keyStoreFileName,String password,String alias)
     {
         keyStoreReader = new KeyStoreReader();
         keyStoreWriter = new KeyStoreWriter();;
@@ -161,7 +164,19 @@ public class AdminService {
         System.out.println("Provera potpisa:");
         // to do
         try {
-            loadedCertificate.verify(publicKey);
+            if(crlService.getCRL("src/main/resources/static/CRL.jks")
+                    .getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null) {
+                System.out.println("CERTIFICATE IS REVOKED!");
+                return;
+            }
+            PublicKey pubK = loadedCertificate.getPublicKey();
+            byte[] signatureValue = ((X509Certificate)loadedCertificate).getSignature();
+            Signature signature = Signature.getInstance("SHA256WithRSAEncryption");
+            signature.initVerify(pubK);
+            signature.update(((X509Certificate)loadedCertificate).getTBSCertificate());
+            signature.verify(signatureValue);
+
+
             ((X509Certificate) loadedCertificate).checkValidity();
             System.out.println("Certificate is valid.");
         } catch (CertificateExpiredException e) {
@@ -170,8 +185,8 @@ public class AdminService {
             System.out.println("Certificate is not yet valid.");
         } catch (CertificateException e) {
             throw new RuntimeException(e);
-          }
-        catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
+        }
+        catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e.getMessage());
         }
     }

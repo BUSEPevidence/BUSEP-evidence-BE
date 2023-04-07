@@ -1,5 +1,6 @@
 package com.pki.example.service;
 
+import com.pki.example.keystores.KeyStoreReader;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -25,6 +26,9 @@ import java.util.Date;
 
 @Service
 public class CRLService {
+
+
+    private static KeyStoreReader keyStoreReader;
     public static X509CRL createEmptyCRL(
             PrivateKey caKey,
             String sigAlg,
@@ -56,7 +60,7 @@ public class CRLService {
         return converter.getCRL(crlGen.build(signer));
     }
 
-    public static X509CRL getCRL(String path){
+    public X509CRL getCRL(String path){
         try {
             FileInputStream crlStream = new FileInputStream(path);
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -70,18 +74,19 @@ public class CRLService {
         return null;
     }
 
-    public static void revokeCertificate(String CRLPath, X509Certificate certificate,PrivateKey caKey,String sigAlg){
-    try {
-        X509CRL crl = getCRL(CRLPath);
+    public void revokeCertificate(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
+        try {
+        X509CRL crl = getCRL("src/main/resources/static/" + CRLKeyStore + "CRL.jks");
         crl = addRevocationToCRL(caKey,sigAlg,crl,certificate);
-        saveCRLToFile(crl,CRLPath);
+        saveCRLToFile(crl,"src/main/resources/static/" + CRLKeyStore + "CRL.jks");
+        CRLService crlService = new CRLService();
     }
     catch (Exception e){
         e.getMessage();
     }
     }
 
-    public static X509CRL addRevocationToCRL(
+    public X509CRL addRevocationToCRL(
             PrivateKey caKey,
             String sigAlg,
             X509CRL crl,
