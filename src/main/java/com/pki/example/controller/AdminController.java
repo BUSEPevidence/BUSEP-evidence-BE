@@ -47,7 +47,7 @@ public class AdminController {
         //PublicKey pk = adminService.getIssuerFromKeyStore();
         //PublicKey pk = issuer.getPublicKey();
         //Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        adminService.checkValidationOfSign("example","password","fourth");
+        String isValid = adminService.checkValidationOfSign("example","password","fourth");
 
 
     }
@@ -60,22 +60,36 @@ public class AdminController {
     @GetMapping("/create-ca")
     public void createCA() throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","third");
-        X509Certificate x509Certificate = (X509Certificate) certificate;
-        String signer = "third";
-        PrivateKey key = adminService.readKeyFromKeyStore(signer);
-        X509Certificate cert = adminService.createCACertificate(x509Certificate,key, keyPair.getPublic(),5);
-        adminService.generateCert("example","fifth","password",cert,keyPair);
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","one");
+        String isValid = adminService.checkValidationOfSign("example","password","one");
+        if(isValid.equals("")) {
+            X509Certificate x509Certificate = (X509Certificate) certificate;
+            String signer = "one";
+            PrivateKey key = adminService.readKeyFromKeyStore(signer);
+            X509Certificate cert = adminService.createCACertificate(x509Certificate, key, keyPair.getPublic(), 5);
+            adminService.generateCert("example", "seven", "password", cert, keyPair);
+        }
+        else
+        {
+            System.out.println("Signer don't have valid certificate");
+        }
     }
     @GetMapping("/create-end-entity")
     public void createEndEntity() throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
         Certificate certificate = adminService.readCertificateFromKeyStore("example","password","fifth");
-        X509Certificate x509Certificate = (X509Certificate) certificate;
-        String signer = "fifth";
-        PrivateKey key = adminService.readKeyFromKeyStore(signer);
-        X509Certificate cert = adminService.createEndEntity(x509Certificate,key,keyPair.getPublic());
-        adminService.generateCert("example","six","password",cert,keyPair);
+        String isValid = adminService.checkValidationOfSign("example","password","one");
+        if(isValid.equals("")) {
+            X509Certificate x509Certificate = (X509Certificate) certificate;
+            String signer = "fifth";
+            PrivateKey key = adminService.readKeyFromKeyStore(signer);
+            X509Certificate cert = adminService.createEndEntity(x509Certificate, key, keyPair.getPublic());
+            adminService.generateCert("example", "six", "password", cert, keyPair);
+        }
+        else
+        {
+            System.out.println("Signer don't have valid certificate");
+        }
     }
 
     @GetMapping("/revoke-certificate")
