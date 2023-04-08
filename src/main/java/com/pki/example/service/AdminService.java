@@ -492,8 +492,176 @@ public class AdminService {
         }
         return certificatesMap;
     }
+    public Map getAllFromStore(String store,String password) {
+        Map<String, Certificate> certificatesMap = new HashMap<>();
+        try {
+            // Load the keystore
 
+            KeyStoreReader keyStoreReader = new KeyStoreReader();
+            KeyStore keystore = KeyStore.getInstance("JKS");
+            keystore.load(new FileInputStream("src/main/resources/static/"+ store +".jks"), password.toCharArray());
 
+            // Retrieve all certificates from the keystore
+            Enumeration<String> aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                Certificate certificate = keystore.getCertificate(alias);
+                System.out.println("Alias: " + alias);
+                System.out.println("Certificate: " + certificate);
+                certificatesMap.put(alias, certificate);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return certificatesMap;
+    }
+//    public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
+//        List<X509Certificate> certificates = new ArrayList<>();
+//        List<X509Certificate> newCertificates = new ArrayList<>(); // New list to hold newly discovered certificates
+//        certificates.addAll(getCertificatesSignedByCA(caAlias, keyStorePath, keyStorePassword));
+//
+//        for (X509Certificate certificate : certificates) {
+//            String alias = certificate.getSubjectX500Principal().getName();
+//            List<X509Certificate> signedCertificates = getAllCertificatesSignedByCA(alias, keyStorePath, keyStorePassword);
+//            if (signedCertificates != null && !signedCertificates.isEmpty()) {
+//                newCertificates.addAll(signedCertificates); // Add newly discovered certificates to the new list
+//            }
+//        }
+//
+//        certificates.addAll(newCertificates); // Add all newly discovered certificates to the certificates list
+//
+//        return certificates;
+//    }
+//public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
+//    List<X509Certificate> certificates = new ArrayList<>();
+//    List<X509Certificate> newCertificates = new ArrayList<>();
+//
+//    certificates.addAll(getCertificatesSignedByCA(caAlias, keyStorePath, keyStorePassword));
+//
+//    int index = 0;
+//    while (index < certificates.size()) {
+//        X509Certificate certificate = certificates.get(index);
+//        String alias = certificate.getSubjectX500Principal().getName();
+//        List<X509Certificate> signedCertificates = getCertificatesSignedByCA(alias, keyStorePath, keyStorePassword);
+//        if (signedCertificates != null && !signedCertificates.isEmpty()) {
+//            for (X509Certificate signedCertificate : signedCertificates) {
+//                if (!certificates.contains(signedCertificate) && !newCertificates.contains(signedCertificate)) {
+//                    newCertificates.add(signedCertificate);
+//                }
+//            }
+//        }
+//        index++;
+//        if (index >= certificates.size() && !newCertificates.isEmpty()) {
+//            certificates.addAll(newCertificates);
+//            index = 0;
+//            newCertificates.clear();
+//        }
+//    }
+//
+//    return certificates;
+//}
+//    public static List<X509Certificate> getCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
+//        List<X509Certificate> certificates = new ArrayList<>();
+//        try (InputStream is = new FileInputStream(keyStorePath)) {
+//            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+//            keyStore.load(is, keyStorePassword.toCharArray());
+//
+//            X509Certificate caCertificate = (X509Certificate) keyStore.getCertificate(caAlias);
+//            Enumeration<String> aliases = keyStore.aliases();
+//            while (aliases.hasMoreElements()) {
+//                String alias = aliases.nextElement();
+//                Certificate certificate = keyStore.getCertificate(alias);
+//                if (certificate instanceof X509Certificate) {
+//                    X509Certificate x509Certificate = (X509Certificate) certificate;
+//                    if (isSignedBy(x509Certificate, caCertificate)) {
+//                        certificates.add(x509Certificate);
+//                    }
+//                }
+//            }
+//        }
+//
+//        return certificates;
+//    }
+//
+//    /**
+//     * Checks if a certificate is signed by a given CA certificate.
+//     *
+//     * @param certificate The certificate to check
+//     * @param caCertificate The CA certificate to verify against
+//     * @return true if the certificate is signed by the given CA certificate, false otherwise
+//     */
+//    public static boolean isSignedBy(X509Certificate certificate, X509Certificate caCertificate) {
+//        try {
+//            certificate.verify(caCertificate.getPublicKey());
+//            return true;
+//        } catch (Exception e) {
+//            return false;
+//        }
+//    }
+//
+public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
+    List<X509Certificate> certificates = new ArrayList<>();
+    List<X509Certificate> newCertificates = new ArrayList<>();
+    certificates.addAll(getCertificatesSignedByCA(caAlias, keyStorePath, keyStorePassword));
+
+    for (int i = 0; i < certificates.size(); i++) {
+        X509Certificate certificate = certificates.get(i);
+        String alias = certificate.getSubjectX500Principal().getName();
+        List<X509Certificate> signedCertificates = getAllCertificatesSignedByCA(alias, keyStorePath, keyStorePassword);
+        for (X509Certificate signedCertificate : signedCertificates) {
+            if (!certificates.contains(signedCertificate)) {
+                newCertificates.add(signedCertificate);
+            }
+        }
+    }
+
+    certificates.addAll(newCertificates);
+
+    return certificates;
+}
+
+    public static List<X509Certificate> getCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
+        List<X509Certificate> certificates = new ArrayList<>();
+        try (InputStream is = new FileInputStream(keyStorePath)) {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(is, keyStorePassword.toCharArray());
+
+            X509Certificate caCertificate = (X509Certificate) keyStore.getCertificate(caAlias);
+            if (caCertificate != null) {
+                certificates.add(caCertificate); // Add the CA certificate to the list
+                List<X509Certificate> signedCertificates = getSignedCertificates(caCertificate, keyStore);
+                certificates.addAll(signedCertificates);
+            }
+        }
+
+        return certificates;
+    }
+
+    public static List<X509Certificate> getSignedCertificates(X509Certificate certificate, KeyStore keyStore) throws Exception {
+        List<X509Certificate> signedCertificates = new ArrayList<>();
+        Enumeration<String> aliases = keyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            Certificate cert = keyStore.getCertificate(alias);
+            if (cert instanceof X509Certificate) {
+                X509Certificate x509Certificate = (X509Certificate) cert;
+                if (isSignedBy(x509Certificate, certificate)) {
+                    signedCertificates.add(x509Certificate);
+                    signedCertificates.addAll(getSignedCertificates(x509Certificate, keyStore));
+                }
+            }
+        }
+        return signedCertificates;
+    }
+
+    public static boolean isSignedBy(X509Certificate certificate, X509Certificate caCertificate) {
+        try {
+            certificate.verify(caCertificate.getPublicKey());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
     public static String extractIssuerCN(X509Certificate certificate) {
         // Get the issuer distinguished name (DN) from the certificate
         String issuerDN = certificate.getIssuerDN().getName();
@@ -529,5 +697,34 @@ public class AdminService {
 
         // If CN is not found, return null
         return null;
+    }
+    public void getAliases(List<X509Certificate> certs) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
+        String keystoreFile = "src/main/resources/static/example.jks";
+        String keystorePassword = "password";
+        KeyStore keyStoree = KeyStore.getInstance("JKS");
+        FileInputStream fis = new FileInputStream(keystoreFile);
+        keyStoree.load(fis, keystorePassword.toCharArray());
+        fis.close();
+        List<X509Certificate> certificates = certs; // List of X509Certificate objects
+        KeyStore keyStore = keyStoree; // Your KeyStore object
+
+        List<String> aliases = new ArrayList<>();
+
+        try {
+            for (X509Certificate certificate : certificates) {
+                Enumeration<String> keyAliases = keyStore.aliases();
+                while (keyAliases.hasMoreElements()) {
+                    String alias = keyAliases.nextElement();
+                    Certificate cert = keyStore.getCertificate(alias);
+                    if (cert instanceof X509Certificate && certificate.equals(cert)) {
+                        System.out.println(alias + " alias");
+                        aliases.add(alias);
+                        break; // Exit the inner loop once a matching alias is found
+                    }
+                }
+            }
+        } catch (KeyStoreException e) {
+            // Handle KeyStoreException as needed
+        }
     }
 }
