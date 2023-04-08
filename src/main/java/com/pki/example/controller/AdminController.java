@@ -2,25 +2,24 @@ package com.pki.example.controller;
 
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
+import com.pki.example.dto.CertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.*;
 import java.security.cert.Certificate;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RequestMapping("/admin")
 public class AdminController {
 
@@ -41,13 +40,13 @@ public class AdminController {
         publicKey = issuer.getPublicKey();
     }
     @GetMapping("/certificate-validity")
-    public void checkValidity() throws Exception {
+    public void checkValidity(@RequestParam("alias") String alias) throws Exception {
 
         //Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
         //PublicKey pk = adminService.getIssuerFromKeyStore();
         //PublicKey pk = issuer.getPublicKey();
         //Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        String isValid = adminService.checkValidationOfSign("example","password","fourth");
+        String isValid = adminService.checkValidationOfSign("example","password",alias);
 
 
     }
@@ -92,15 +91,15 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/revoke-certificate")
-    public void revokeCertificate() throws Exception {
+    @PostMapping("/revoke-certificate")
+    public void revokeCertificate(@RequestBody String alias) throws Exception {
         keyStoreReader = new KeyStoreReader();
         //String alias = "ca";
         //String keyStoreFileName = "example";
         //String password = "password";
-        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", "one");
+        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", alias);
         crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
-        List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA("one","src/main/resources/static/" + "example" + ".jks","password");
+        List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA(alias,"src/main/resources/static/" + "example" + ".jks","password");
         System.out.println(listCert.size() + " eo size liste");
         adminService.getAliases(listCert);
 //        Map<String, Certificate> certificatesMap = new HashMap<>();
@@ -110,10 +109,21 @@ public class AdminController {
     }
 
     @GetMapping("/get-all-from-store")
-    public void getCertificateInfo() throws Exception {
+    public ResponseEntity<ArrayList<CertificateDTO>> getCertificateInfo() throws Exception {
+        ArrayList<CertificateDTO> certificateList = new ArrayList<CertificateDTO>();
         Map<String, Certificate> certificatesMap = new HashMap<>();
         certificatesMap = adminService.getAllFromStore("example","password");
-        certificatesMap.forEach((alias,certificate) -> System.out.println(alias + "\n Certificate: " + certificate));
+        //certificatesMap.forEach((alias,certificate) -> System.out.println(alias + "\n Certificate: " + certificate));
+        certificatesMap.forEach((alias, certificate) -> {
+            String issuerName = adminService.extractIssuerCN((X509Certificate)certificate);
+            String subjectName = adminService.extractSubjectCN((X509Certificate)certificate);
+            String serialNumber = ((X509Certificate) certificate).getSerialNumber().toString();
+            Date startDate = ((X509Certificate) certificate).getNotBefore();
+            Date endDate = ((X509Certificate) certificate).getNotAfter();
+
+            certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, alias));
+        });
+        return new ResponseEntity<>(certificateList, HttpStatus.OK);
     }
     @GetMapping("/get-bellow")
     public void getBellow() throws Exception {

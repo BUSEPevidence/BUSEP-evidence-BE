@@ -509,8 +509,8 @@ public class AdminService {
             while (aliases.hasMoreElements()) {
                 String alias = aliases.nextElement();
                 Certificate certificate = keystore.getCertificate(alias);
-                System.out.println("Alias: " + alias);
-                System.out.println("Certificate: " + certificate);
+                //System.out.println("Alias: " + alias);
+                //System.out.println("Certificate: " + certificate);
                 certificatesMap.put(alias, certificate);
             }
         } catch (Exception e) {
@@ -701,6 +701,8 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
         // If CN is not found, return null
         return null;
     }
+
+
     public void getAliases(List<X509Certificate> certs) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
         String keystoreFile = "src/main/resources/static/example.jks";
         String keystorePassword = "password";
