@@ -2,10 +2,13 @@ package com.pki.example.controller;
 
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
+import com.pki.example.dto.CertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,9 +19,7 @@ import java.security.cert.Certificate;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/admin")
@@ -110,10 +111,21 @@ public class AdminController {
     }
 
     @GetMapping("/get-all-from-store")
-    public void getCertificateInfo() throws Exception {
+    public ResponseEntity<ArrayList<CertificateDTO>> getCertificateInfo() throws Exception {
+        ArrayList<CertificateDTO> certificateList = new ArrayList<CertificateDTO>();
         Map<String, Certificate> certificatesMap = new HashMap<>();
         certificatesMap = adminService.getAllFromStore("example","password");
-        certificatesMap.forEach((alias,certificate) -> System.out.println(alias + "\n Certificate: " + certificate));
+        //certificatesMap.forEach((alias,certificate) -> System.out.println(alias + "\n Certificate: " + certificate));
+        certificatesMap.forEach((alias, certificate) -> {
+            String issuerName = adminService.extractIssuerCN((X509Certificate)certificate);
+            String subjectName = adminService.extractSubjectCN((X509Certificate)certificate);
+            String serialNumber = ((X509Certificate) certificate).getSerialNumber().toString();
+            Date startDate = ((X509Certificate) certificate).getNotBefore();
+            Date endDate = ((X509Certificate) certificate).getNotAfter();
+
+            certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, alias));
+        });
+        return new ResponseEntity<>(certificateList, HttpStatus.OK);
     }
     @GetMapping("/get-bellow")
     public void getBellow() throws Exception {
