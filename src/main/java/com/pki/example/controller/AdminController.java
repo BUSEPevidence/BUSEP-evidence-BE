@@ -16,6 +16,9 @@ import java.security.cert.Certificate;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -43,8 +46,8 @@ public class AdminController {
         //Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
         //PublicKey pk = adminService.getIssuerFromKeyStore();
         //PublicKey pk = issuer.getPublicKey();
-        Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        adminService.checkValidationOfSign("example","password","ca");
+        //Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
+        adminService.checkValidationOfSign("example","password","fourth");
 
 
     }
@@ -57,33 +60,51 @@ public class AdminController {
     @GetMapping("/create-ca")
     public void createCA() throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","root");
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","third");
         X509Certificate x509Certificate = (X509Certificate) certificate;
-        String signer = "root";
+        String signer = "third";
         PrivateKey key = adminService.readKeyFromKeyStore(signer);
         X509Certificate cert = adminService.createCACertificate(x509Certificate,key, keyPair.getPublic(),5);
-        adminService.generateCert("example","ca","password",cert,keyPair);
+        adminService.generateCert("example","fifth","password",cert,keyPair);
     }
     @GetMapping("/create-end-entity")
     public void createEndEntity() throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","ca");
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","fifth");
         X509Certificate x509Certificate = (X509Certificate) certificate;
-        String signer = "ca";
+        String signer = "fifth";
         PrivateKey key = adminService.readKeyFromKeyStore(signer);
         X509Certificate cert = adminService.createEndEntity(x509Certificate,key,keyPair.getPublic());
-        adminService.generateCert("example","endEntity","password",cert,keyPair);
+        adminService.generateCert("example","six","password",cert,keyPair);
     }
 
     @GetMapping("/revoke-certificate")
-    public void revokeCertificate(@RequestParam(value= "alias", required =true)String alias, @RequestParam(value= "keyStoreFileName", required =true)String keyStoreFileName,
-                                  @RequestParam(value= "password", required =true)String password) throws Exception {
+    public void revokeCertificate() throws Exception {
         keyStoreReader = new KeyStoreReader();
         //String alias = "ca";
         //String keyStoreFileName = "example";
         //String password = "password";
-        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + keyStoreFileName + ".jks", password, alias);
+        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", "one");
         crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
+        List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA("one","src/main/resources/static/" + "example" + ".jks","password");
+        System.out.println(listCert.size() + " eo size liste");
+        adminService.getAliases(listCert);
+//        Map<String, Certificate> certificatesMap = new HashMap<>();
+//        certificatesMap = adminService.getAllCertificatesSignBy((X509Certificate) loadedCertificate);
+//        certificatesMap.forEach((alias, cert) -> crlService.revCert("", (X509Certificate) cert,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption"));
+        listCert.forEach(x -> crlService.revCert("",x,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption"));
+    }
+
+    @GetMapping("/get-all-from-store")
+    public void getCertificateInfo() throws Exception {
+        Map<String, Certificate> certificatesMap = new HashMap<>();
+        certificatesMap = adminService.getAllFromStore("example","password");
+        certificatesMap.forEach((alias,certificate) -> System.out.println(alias + "\n Certificate: " + certificate));
+    }
+    @GetMapping("/get-bellow")
+    public void getBellow() throws Exception {
+        List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA("one","src/main/resources/static/" + "example" + ".jks","password");
+        adminService.getAliases(listCert);
     }
 
 
