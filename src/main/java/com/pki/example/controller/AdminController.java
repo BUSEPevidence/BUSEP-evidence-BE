@@ -40,13 +40,13 @@ public class AdminController {
         publicKey = issuer.getPublicKey();
     }
     @GetMapping("/certificate-validity")
-    public void checkValidity() throws Exception {
+    public void checkValidity(@RequestParam("alias") String alias) throws Exception {
 
         //Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
         //PublicKey pk = adminService.getIssuerFromKeyStore();
         //PublicKey pk = issuer.getPublicKey();
         //Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        String isValid = adminService.checkValidationOfSign("example","password","fourth");
+        String isValid = adminService.checkValidationOfSign("example","password",alias);
 
 
     }
@@ -91,15 +91,15 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/revoke-certificate")
-    public void revokeCertificate() throws Exception {
+    @PostMapping("/revoke-certificate")
+    public void revokeCertificate(@RequestBody String alias) throws Exception {
         keyStoreReader = new KeyStoreReader();
         //String alias = "ca";
         //String keyStoreFileName = "example";
         //String password = "password";
-        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", "one");
+        Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", alias);
         crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
-        List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA("one","src/main/resources/static/" + "example" + ".jks","password");
+        List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA(alias,"src/main/resources/static/" + "example" + ".jks","password");
         System.out.println(listCert.size() + " eo size liste");
         adminService.getAliases(listCert);
 //        Map<String, Certificate> certificatesMap = new HashMap<>();
