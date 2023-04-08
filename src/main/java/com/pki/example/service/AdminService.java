@@ -153,7 +153,7 @@ public class AdminService {
         return loadedCertificate;
     }
 
-    public void checkValidationOfSign(String keyStoreFileName,String password,String alias)
+    public String checkValidationOfSign(String keyStoreFileName,String password,String alias)
     {
         keyStoreReader = new KeyStoreReader();
         keyStoreWriter = new KeyStoreWriter();;
@@ -166,7 +166,7 @@ public class AdminService {
             if(crlService.getCRL("src/main/resources/static/CRL.jks")
                     .getRevokedCertificate(((X509Certificate)loadedCertificate).getSerialNumber()) != null) {
                 System.out.println("CERTIFICATE IS REVOKED!");
-                return;
+                return "CERTIFICATE IS REVOKED!";
             }
             PublicKey pubK = loadedCertificate.getPublicKey();
             byte[] signatureValue = ((X509Certificate)loadedCertificate).getSignature();
@@ -180,14 +180,17 @@ public class AdminService {
             System.out.println("Certificate is valid.");
         } catch (CertificateExpiredException e) {
             System.out.println("Certificate has expired.");
+            return "Certificate has expired.";
         } catch (CertificateNotYetValidException e) {
             System.out.println("Certificate is not yet valid.");
+            return "Certificate is not yet valid.";
         } catch (CertificateException e) {
             throw new RuntimeException(e);
         }
         catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e.getMessage());
         }
+        return "";
     }
     public Subject generateSubject(String CN,String Surname,String Name,String O,String OU,String C,String Email,String UID) {
         KeyPair keyPairSubject = generateKeyPair();
