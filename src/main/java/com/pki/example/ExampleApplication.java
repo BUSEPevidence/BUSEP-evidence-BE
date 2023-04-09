@@ -61,8 +61,6 @@ public class ExampleApplication {
 		CRLService.saveCRLToFile(crl,"src/main/resources/static/CRL.jks");
 
 		CRLService crlService = new CRLService();
-		//crlService.revokeCertificate("",(X509Certificate)loadedCertificate, PrivK,"SHA256WithRSAEncryption");
-
 	}
 
 }
