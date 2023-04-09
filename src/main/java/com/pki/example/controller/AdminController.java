@@ -2,6 +2,7 @@ package com.pki.example.controller;
 
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
+import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.CertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
@@ -50,40 +51,50 @@ public class AdminController {
 
 
     }
-    @GetMapping("/create-root")
-    public void createRoot() throws Exception {
+    @PostMapping("/create-root")
+    public void createRoot(@RequestParam("root") String root,@RequestParam("yearsOfValidity") Integer yearsOfValidity) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        X509Certificate certificate = adminService.createTrustAnchor(keyPair);
-        adminService.generateCert("example","root","password",certificate,keyPair);
+        X509Certificate certificate = adminService.createTrustAnchor(keyPair,root,yearsOfValidity);
+        adminService.generateCert("example",root,"password",certificate,keyPair);
     }
-    @GetMapping("/create-ca")
-    public void createCA() throws Exception {
+    @PostMapping("/create-ca")
+    public void createCA(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","one");
-        String isValid = adminService.checkValidationOfSign("example","password","one");
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password",alias);
+        if(certificate == null) {
+            System.out.println("There is no certificate with alias: " + alias);
+            return;
+        }
+        String isValid = adminService.checkValidationOfSign("example","password",alias);
         if(isValid.equals("")) {
             X509Certificate x509Certificate = (X509Certificate) certificate;
-            String signer = "one";
+            String signer = alias;
             PrivateKey key = adminService.readKeyFromKeyStore(signer);
-            X509Certificate cert = adminService.createCACertificate(x509Certificate, key, keyPair.getPublic(), 5);
-            adminService.generateCert("example", "seven", "password", cert, keyPair);
+            X509Certificate cert = adminService.createCACertificate(x509Certificate, key, keyPair.getPublic(), 5,cAandEECertificateDTO,certName);
+            if(cert == null ) return;
+            adminService.generateCert("example", certName, "password", cert, keyPair);
         }
         else
         {
             System.out.println("Signer don't have valid certificate");
         }
     }
-    @GetMapping("/create-end-entity")
-    public void createEndEntity() throws Exception {
+    @PostMapping("/create-end-entity")
+    public void createEndEntity(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        Certificate certificate = adminService.readCertificateFromKeyStore("example","password","fifth");
-        String isValid = adminService.checkValidationOfSign("example","password","one");
+        Certificate certificate = adminService.readCertificateFromKeyStore("example","password",alias);
+        if(certificate == null) {
+            System.out.println("There is no certificate with alias: " + alias);
+            return;
+        }
+        String isValid = adminService.checkValidationOfSign("example","password",alias);
         if(isValid.equals("")) {
             X509Certificate x509Certificate = (X509Certificate) certificate;
-            String signer = "fifth";
+            String signer = alias;
             PrivateKey key = adminService.readKeyFromKeyStore(signer);
-            X509Certificate cert = adminService.createEndEntity(x509Certificate, key, keyPair.getPublic());
-            adminService.generateCert("example", "six", "password", cert, keyPair);
+            X509Certificate cert = adminService.createEndEntity(x509Certificate, key, keyPair.getPublic(),cAandEECertificateDTO,certName);
+            if(cert == null ) return;
+            adminService.generateCert("example", certName, "password", cert, keyPair);
         }
         else
         {

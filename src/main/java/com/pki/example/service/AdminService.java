@@ -5,8 +5,10 @@ import com.pki.example.certificates.CertificateExample;
 import com.pki.example.certificates.CertificateGenerator;
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
+import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -20,6 +22,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.oer.its.EndEntityType;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -159,6 +162,7 @@ public class AdminService {
         keyStoreWriter = new KeyStoreWriter();;
        // com.pki.example.data.Certificate certificate = certificatte;
         Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + keyStoreFileName + ".jks", password, alias);
+        if(loadedCertificate == null) return null;
         System.out.println(loadedCertificate);
         System.out.println("Provera potpisa:");
         // to do
@@ -303,17 +307,27 @@ public class AdminService {
         return BigInteger.valueOf(serialNumberBase++);
     }
     public static X509Certificate createTrustAnchor(
-            KeyPair keyPair)
+            KeyPair keyPair, String rootName, Integer yearsOfValidation)
             throws OperatorCreationException, CertificateException
     {
-        X500Name name = new X500Name("CN=Trust Anchor");
 
+        if(isAliasUsed(rootName)){
+            System.out.println("Alias is used choose another!");
+            return null;
+        }
+        X500Name name = new X500Name("CN=" + rootName);
+
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = new Date();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.YEAR,yearsOfValidation);
+        Date dateOfExpirement = calendar.getTime();
 
         X509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
                 name,
                 calculateSerialNumber(),
-                calculateDate(0),
-                calculateDate(24 * 365),
+                new Date(),
+                dateOfExpirement,
                 name,
                 keyPair.getPublic());
 
@@ -329,17 +343,34 @@ public class AdminService {
     }
     public static X509Certificate createEndEntity(
             X509Certificate signerCert, PrivateKey signerKey,
-            PublicKey certKey)
+            PublicKey certKey,CAandEECertificateDTO cAandEECertificateDTO,String certName)
             throws CertIOException, OperatorCreationException, CertificateException
     {
-        X500Principal subject = new X500Principal("CN=End Entity");
 
+        if(isEndEntity(signerCert)){
+            System.out.println("You cannot create End-entity certificate because parent certificate is End-entity!");
+            return null;
+        }
+
+        if(isAliasUsed(certName)){
+            System.out.println("Alias is used choose another!");
+            return null;
+        }
+        X500Principal subject = new X500Principal("CN=" + cAandEECertificateDTO.subjectName + "," + "O=" + cAandEECertificateDTO.organization + ","
+                + "OU=" + cAandEECertificateDTO.orgainzationUnit + "," + "C=" + cAandEECertificateDTO.country);
+
+
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = new Date();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.YEAR,cAandEECertificateDTO.yearsOfValidity);
+        Date dateOfExpirement = calendar.getTime();
 
         X509v3CertificateBuilder  certBldr = new JcaX509v3CertificateBuilder(
                 signerCert.getSubjectX500Principal(),
                 calculateSerialNumber(),
-                calculateDate(0),
-                calculateDate(24 * 31),
+                new Date(),
+                dateOfExpirement,
                 subject,
                 certKey);
 
@@ -362,18 +393,34 @@ public class AdminService {
 
     public static X509Certificate createCACertificate(
             X509Certificate signerCert, PrivateKey signerKey,
-             PublicKey certKey, int followingCACerts)
+            PublicKey certKey, int followingCACerts, CAandEECertificateDTO cAandEECertificateDTO,String certName)
             throws GeneralSecurityException,
             OperatorCreationException, CertIOException
     {
-        X500Principal subject = new X500Principal("CN=Certificate Authority");
 
+        if(isEndEntity(signerCert) ){
+            System.out.println("You cannot create End-entity certificate because parent certificate is End-entity!");
+            return null;
+        }
+
+        if(isAliasUsed(certName)){
+            System.out.println("Alias is used choose another!");
+            return null;
+        }
+        X500Principal subject = new X500Principal("CN=" + cAandEECertificateDTO.subjectName + "," + "O=" + cAandEECertificateDTO.organization + ","
+                + "OU=" + cAandEECertificateDTO.orgainzationUnit + "," + "C=" + cAandEECertificateDTO.country);
+
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = new Date();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.YEAR,cAandEECertificateDTO.yearsOfValidity);
+        Date dateOfExpirement = calendar.getTime();
 
         X509v3CertificateBuilder certBldr = new JcaX509v3CertificateBuilder(
                 signerCert.getSubjectX500Principal(),
                 calculateSerialNumber(),
-                calculateDate(0),
-                calculateDate(24 * 60),
+                new Date(),
+                dateOfExpirement,
                 subject,
                 certKey);
 
@@ -464,6 +511,13 @@ public class AdminService {
             e.printStackTrace();
         }
         return null;
+    }
+
+
+    public static boolean isAliasUsed(String checkCertName) {
+       if(keyStoreReader.readCertificate("src/main/resources/static/example.jks", "password", checkCertName) == null)
+           return false;
+       return true;
     }
     public Map getAllCertificatesSignBy(X509Certificate xcertificate) {
         Map<String, Certificate> certificatesMap = new HashMap<>();
@@ -730,6 +784,35 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
             }
         } catch (KeyStoreException e) {
             // Handle KeyStoreException as needed
+        }
+    }
+
+    public static boolean isEndEntity(X509Certificate cert) {
+        try {
+            // Verify that the certificate has the digitalSignature or keyEncipherment bit set in the KeyUsage extension
+            boolean[] keyUsage = cert.getKeyUsage();
+            if (keyUsage != null && (keyUsage[0] || keyUsage[2])) {
+                // The digitalSignature or keyEncipherment bit is set, which means this is an end-entity certificate
+                return true;
+            }
+
+            // Verify that the certificate does not have the cA bit set in the basicConstraints extension
+            BasicConstraints basicConstraints = BasicConstraints.getInstance(cert.getExtensionValue("2.5.29.19"));
+            if (basicConstraints != null && basicConstraints.isCA()) {
+                // The certificate is a CA or root certificate, not an end-entity certificate
+                return false;
+            }
+
+            // If the key usage extension is not present and the basic constraints extension is present but the CA flag is not set,
+            // we consider this to be an end-entity certificate as well.
+            if (keyUsage == null && basicConstraints != null && !basicConstraints.isCA()) {
+                return true;
+            }
+
+            // If we reach this point, the certificate is not an end-entity certificate
+            return false;
+        } catch (Exception e) {
+            return false;
         }
     }
 }
