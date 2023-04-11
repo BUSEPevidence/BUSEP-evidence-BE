@@ -515,6 +515,7 @@ public class AdminService {
 
 
     public static boolean isAliasUsed(String checkCertName) {
+        keyStoreReader = new KeyStoreReader();
        if(keyStoreReader.readCertificate("src/main/resources/static/example.jks", "password", checkCertName) == null)
            return false;
        return true;
@@ -666,7 +667,7 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
         String alias = certificate.getSubjectX500Principal().getName();
         List<X509Certificate> signedCertificates = getAllCertificatesSignedByCA(alias, keyStorePath, keyStorePassword);
         for (X509Certificate signedCertificate : signedCertificates) {
-            if (!certificates.contains(signedCertificate)) {
+            if (!certificates.contains(signedCertificate) && !newCertificates.contains(signedCertificate)) {
                 newCertificates.add(signedCertificate);
             }
         }
@@ -702,7 +703,7 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
             Certificate cert = keyStore.getCertificate(alias);
             if (cert instanceof X509Certificate) {
                 X509Certificate x509Certificate = (X509Certificate) cert;
-                if (isSignedBy(x509Certificate, certificate)) {
+                if (!x509Certificate.equals(certificate) && isSignedBy(x509Certificate, certificate)) {
                     signedCertificates.add(x509Certificate);
                     signedCertificates.addAll(getSignedCertificates(x509Certificate, keyStore));
                 }

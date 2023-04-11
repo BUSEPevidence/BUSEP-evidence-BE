@@ -103,7 +103,7 @@ public class AdminController {
     }
 
     @PostMapping("/revoke-certificate")
-    public void revokeCertificate(@RequestBody String alias) throws Exception {
+    public void revokeCertificate(@RequestParam String alias) throws Exception {
         keyStoreReader = new KeyStoreReader();
         //String alias = "ca";
         //String keyStoreFileName = "example";
