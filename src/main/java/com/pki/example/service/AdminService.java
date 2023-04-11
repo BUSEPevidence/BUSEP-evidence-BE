@@ -149,7 +149,7 @@ public class AdminService {
         catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e.getMessage());
         }
-        return "";
+        return "Certificate is valid.";
     }
     public KeyPair generateKeyPair() {
         try {
