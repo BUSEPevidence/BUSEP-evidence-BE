@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.math.BigInteger;
@@ -33,8 +34,9 @@ public class AdminController {
     private static KeyStoreReader keyStoreReader;
 
     @GetMapping("/certificate-validity")
-    public void checkValidity(@RequestParam("alias") String alias) throws Exception {
+    public ResponseEntity<String> checkValidity(@RequestParam("alias") String alias) throws Exception {
         String isValid = adminService.checkValidationOfSign("example","password",alias);
+        return ResponseEntity.ok().body(isValid);
     }
     @PostMapping("/create-root")
     public void createRoot(@RequestBody RootCertificateDTO dto) throws Exception {
