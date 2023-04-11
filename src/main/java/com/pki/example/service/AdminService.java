@@ -546,4 +546,31 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
             return false;
         }
     }
+
+    public ArrayList<String> getTrustedAliases() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException{
+        String keystoreFile = "src/main/resources/static/example.jks";
+        String keystorePassword = "password";
+        ArrayList<String> aliases = new ArrayList<String>();
+        FileInputStream fis = new FileInputStream(keystoreFile);
+        KeyStore keystore = KeyStore.getInstance("JKS");
+        keystore.load(fis, keystorePassword.toCharArray());
+        Enumeration<String> aliasEnum = keystore.aliases();
+        while (aliasEnum.hasMoreElements()) {
+            String alias = aliasEnum.nextElement();
+            Certificate cert = keystore.getCertificate(alias);
+            if (cert instanceof X509Certificate) {
+                X509Certificate x509cert = (X509Certificate) cert;
+                X500Principal issuer = x509cert.getIssuerX500Principal();
+                X500Principal subject = x509cert.getSubjectX500Principal();
+                if (x509cert.getKeyUsage() != null && x509cert.getKeyUsage().length > 5 && x509cert.getKeyUsage()[5]) {
+                    aliases.add(alias);
+                }
+                if (issuer.equals(subject)){
+                    aliases.add(alias);
+                }
+            }
+        }
+        fis.close();
+        return aliases;
+    }
 }
