@@ -4,6 +4,7 @@ import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
 import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.CertificateDTO;
+import com.pki.example.dto.RootCertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
@@ -36,10 +37,10 @@ public class AdminController {
         String isValid = adminService.checkValidationOfSign("example","password",alias);
     }
     @PostMapping("/create-root")
-    public void createRoot(@RequestParam("root") String root,@RequestParam("yearsOfValidity") Integer yearsOfValidity) throws Exception {
+    public void createRoot(@RequestBody RootCertificateDTO dto) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
-        X509Certificate certificate = adminService.createTrustAnchor(keyPair,root,yearsOfValidity);
-        adminService.generateCert("example",root,"password",certificate,keyPair);
+        X509Certificate certificate = adminService.createTrustAnchor(keyPair, dto);
+        adminService.generateCert("example",dto.rootName,"password",certificate,keyPair);
     }
     @PostMapping("/create-ca")
     public void createCA(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
@@ -87,7 +88,7 @@ public class AdminController {
     }
 
     @PostMapping("/revoke-certificate")
-    public void revokeCertificate(@RequestParam String alias) throws Exception {
+    public void revokeCertificate(@RequestBody String alias) throws Exception {
         keyStoreReader = new KeyStoreReader();
         Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", alias);
         crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");

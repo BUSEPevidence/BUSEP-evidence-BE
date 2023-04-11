@@ -6,6 +6,7 @@ import com.pki.example.certificates.CertificateGenerator;
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
 import com.pki.example.dto.CAandEECertificateDTO;
+import com.pki.example.dto.RootCertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -177,28 +178,35 @@ public class AdminService {
         return BigInteger.valueOf(serialNumberBase++);
     }
     public static X509Certificate createTrustAnchor(
-            KeyPair keyPair, String rootName, Integer yearsOfValidation)
+            KeyPair keyPair, RootCertificateDTO dto)
             throws OperatorCreationException, CertificateException
     {
 
-        if(isAliasUsed(rootName)){
+        if(isAliasUsed(dto.rootName)){
             System.out.println("Alias is used choose another!");
             return null;
         }
-        X500Name name = new X500Name("CN=" + rootName);
+        //X500Name name = new X500Name("CN=" + rootName);
+
+
+        //Umjesto x500Name napravim x500Principal subject-a
+        X500Principal subject = new X500Principal("CN=" + dto.rootName + "," + "O=" + dto.organization + ","
+                + "OU=" + dto.orgainzationUnit + "," + "C=" + dto.country);
 
         Calendar calendar = Calendar.getInstance();
         Date currentDate = new Date();
         calendar.setTime(currentDate);
-        calendar.add(Calendar.YEAR,yearsOfValidation);
+        calendar.add(Calendar.YEAR,dto.yearsOfValidity);
         Date dateOfExpirement = calendar.getTime();
 
+
+        //Umjesto name proslijedim subjecta
         X509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
-                name,
+                subject,
                 calculateSerialNumber(),
                 new Date(),
                 dateOfExpirement,
-                name,
+                subject,
                 keyPair.getPublic());
 
 
