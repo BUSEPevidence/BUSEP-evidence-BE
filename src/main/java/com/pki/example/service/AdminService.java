@@ -67,34 +67,10 @@ public class AdminService {
     @Autowired
     private CRLService crlService = new CRLService();
 
-
-    public com.pki.example.data.Certificate generateCertificate(String keyStoreFileName,String certificateName,String keyStorePassword,com.pki.example.data.Certificate cert)
-    {
-        keyStoreReader = new KeyStoreReader();
-        keyStoreWriter = new KeyStoreWriter();
-        //certExample = (CertificateExample) context.getBean("certificateExample");
-
-        com.pki.example.data.Certificate certificate = cert;
-        System.out.println("Novi sertifikat:");
-        System.out.println(certificate.getX509Certificate());
-
-        // Inicijalizacija fajla za cuvanje sertifikata
-        System.out.println("Cuvanje certifikata u jks fajl:");
-        keyStoreWriter.loadKeyStore("src/main/resources/static/" + keyStoreFileName + ".jks",  keyStorePassword.toCharArray());
-        PrivateKey pk = certificate.getIssuer().getPrivateKey();
-        keyStoreWriter.write(certificateName, pk, keyStorePassword.toCharArray(), certificate.getX509Certificate());
-        keyStoreWriter.saveKeyStore("src/main/resources/static/"  + keyStoreFileName + ".jks",  keyStorePassword.toCharArray());
-        System.out.println("Cuvanje certifikata u jks fajl zavrseno.");
-        return certificate;
-
-
-
-    }
     public X509Certificate generateCert(String keyStoreFileName,String certificateName,String keyStorePassword,X509Certificate cert,KeyPair keyPair)
     {
         keyStoreReader = new KeyStoreReader();
         keyStoreWriter = new KeyStoreWriter();
-        //certExample = (CertificateExample) context.getBean("certificateExample");
 
         System.out.println("Novi sertifikat:");
         System.out.println(cert);
@@ -107,9 +83,6 @@ public class AdminService {
         keyStoreWriter.saveKeyStore("src/main/resources/static/"  + keyStoreFileName + ".jks",  keyStorePassword.toCharArray());
         System.out.println("Cuvanje certifikata u jks fajl zavrseno.");
         return cert;
-
-
-
     }
 
     public PrivateKey readKeyFromKeyStore(String signer) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
@@ -125,25 +98,6 @@ public class AdminService {
         } else {
             throw new IllegalStateException("Private key not found in keystore");
         }
-
-    }
-    public PublicKey readPublicKeyFromKeyStore() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
-        KeyStoreReader keyStoreReader = new KeyStoreReader();
-
-        KeyStore keystore = KeyStore.getInstance("JKS");
-        BufferedInputStream in = new BufferedInputStream(new FileInputStream("src/main/resources/static/example.jks"));
-        keystore.load(in, "password".toCharArray());
-
-        // Get the certificate from the keystore using the alias
-        Certificate cert = keystore.getCertificate("ca");
-        if (cert != null) {
-            // Extract the public key from the certificate
-            PublicKey publicKey = cert.getPublicKey();
-            return publicKey;
-        } else {
-            throw new IllegalStateException("Certificate not found in keystore");
-        }
-
     }
     public Certificate readCertificateFromKeyStore(String keyStoreFileName,String password,String alias)
     {
@@ -197,23 +151,6 @@ public class AdminService {
         }
         return "";
     }
-    public Subject generateSubject(String CN,String Surname,String Name,String O,String OU,String C,String Email,String UID) {
-        KeyPair keyPairSubject = generateKeyPair();
-
-        //klasa X500NameBuilder pravi X500Name objekat koji predstavlja podatke o vlasniku
-        X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
-        builder.addRDN(BCStyle.CN, CN);
-        builder.addRDN(BCStyle.SURNAME, Surname);
-        builder.addRDN(BCStyle.GIVENNAME, Name);
-        builder.addRDN(BCStyle.O, O);
-        builder.addRDN(BCStyle.OU, OU);
-        builder.addRDN(BCStyle.C, C);
-        builder.addRDN(BCStyle.E, Email);
-        //UID (USER ID) je ID korisnika
-        builder.addRDN(BCStyle.UID, UID);
-
-        return new Subject(keyPairSubject.getPublic(), builder.build());
-    }
     public KeyPair generateKeyPair() {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
@@ -227,74 +164,7 @@ public class AdminService {
         }
         return null;
     }
-    public Issuer generateIssuer(String CN,String Surname,String Name,String O,String OU,String C,String Email,String UID) {
-        KeyPair kp = generateKeyPair();
-        X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
-        builder.addRDN(BCStyle.CN, CN);
-        builder.addRDN(BCStyle.SURNAME, Surname);
-        builder.addRDN(BCStyle.GIVENNAME, Name);
-        builder.addRDN(BCStyle.O, O);
-        builder.addRDN(BCStyle.OU, OU);
-        builder.addRDN(BCStyle.C, C);
-        builder.addRDN(BCStyle.E, Email);
-        //UID (USER ID) je ID korisnika
-        builder.addRDN(BCStyle.UID, UID);
-        //Kreiraju se podaci za issuer-a, sto u ovom slucaju ukljucuje:
-        // - privatni kljuc koji ce se koristiti da potpise sertifikat koji se izdaje
-        // - podatke o vlasniku sertifikata koji izdaje nov sertifikat
-        return new Issuer(kp.getPrivate(), kp.getPublic(), builder.build());
-    }
-    public com.pki.example.data.Certificate getEndEntityCertificate(Issuer issuerData,Subject subjectData,String startValidDate,String endValidDate) {
 
-        try {
-            Issuer issuer = issuerData;
-            Subject subject = subjectData;
-
-            //Datumi od kad do kad vazi sertifikat
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date startDate = sdf.parse(startValidDate);
-            Date endDate = sdf.parse(endValidDate);
-
-            X509Certificate certificate = CertificateGenerator.generateCertificate(subject,
-                    issuer, startDate, endDate, "1");
-
-            return new com.pki.example.data.Certificate(subject, issuer,
-                    "1", startDate, endDate, certificate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-    public com.pki.example.data.Certificate getSelfSignedCertificate(Issuer issuerData,String startValidDate,String endValidDate) {
-
-        try {
-            Issuer issuer = issuerData;
-            Subject subject = new Subject();
-
-            //Datumi od kad do kad vazi sertifikat
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date startDate = sdf.parse(startValidDate);
-            Date endDate = sdf.parse(endValidDate);
-
-            X509Certificate certificate = CertificateGenerator.generateCertificate(subject,
-                    issuer, startDate, endDate, "1");
-
-            return new com.pki.example.data.Certificate(subject, issuer,
-                    "1", startDate, endDate, certificate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-    public static Date calculateDate(int hoursInFuture)
-    {
-        long secs = System.currentTimeMillis() / 1000;
-
-
-        return new Date((secs + (hoursInFuture * 60 * 60)) * 1000);
-    }
     private static long serialNumberBase = System.currentTimeMillis();
 
 
@@ -452,37 +322,6 @@ public class AdminService {
 
         return converter.getCertificate(certBldr.build(signer));
     }
-    public PublicKey getIssuerFromKeyStore() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream inputStream = new FileInputStream("src/main/resources/static/example.jks"); // replace with your KeyStore source
-        String password = "password"; // replace with your KeyStore password
-        keyStore.load(inputStream, password.toCharArray());
-        String alias = "cert8"; // replace with the alias of the certificate for which you want to get issuer information
-        Certificate certificate = keyStore.getCertificate(alias);
-        PublicKey issuerPublicKey = null;
-        if (certificate instanceof X509Certificate) {
-            X509Certificate x509Certificate = (X509Certificate) certificate;
-            X500Principal issuerPrincipal = x509Certificate.getIssuerX500Principal();
-
-            // Retrieve the issuer's public key from the KeyStore
-            Enumeration<String> aliases = keyStore.aliases();
-            while (aliases.hasMoreElements()) {
-                String keyStoreAlias = aliases.nextElement();
-                Certificate keyStoreCertificate = keyStore.getCertificate(keyStoreAlias);
-                if (keyStoreCertificate instanceof X509Certificate) {
-                    X509Certificate keyStoreX509Certificate = (X509Certificate) keyStoreCertificate;
-                    X500Principal keyStoreIssuerPrincipal = keyStoreX509Certificate.getIssuerX500Principal();
-                    if (issuerPrincipal.equals(keyStoreIssuerPrincipal)) {
-                        issuerPublicKey = keyStoreX509Certificate.getPublicKey();
-                        break;
-                    }
-                }
-            }
-
-
-        }
-        return issuerPublicKey;
-    }
     public X509Certificate printCertificateInfo(X509Certificate xcertificate) {
         Map<String, Certificate> certificatesMap = new HashMap<>();
         try {
@@ -520,43 +359,11 @@ public class AdminService {
         }
         return null;
     }
-
-
     public static boolean isAliasUsed(String checkCertName) {
         keyStoreReader = new KeyStoreReader();
        if(keyStoreReader.readCertificate("src/main/resources/static/example.jks", "password", checkCertName) == null)
            return false;
        return true;
-    }
-    public Map getAllCertificatesSignBy(X509Certificate xcertificate) {
-        Map<String, Certificate> certificatesMap = new HashMap<>();
-        try {
-            // Load the keystore
-
-            KeyStoreReader keyStoreReader = new KeyStoreReader();
-            KeyStore keystore = KeyStore.getInstance("JKS");
-            keystore.load(new FileInputStream("src/main/resources/static/example.jks"), "password".toCharArray());
-
-            // Retrieve all certificates from the keystore
-            String issuerCN = extractSubjectCN(xcertificate);
-            Enumeration<String> aliases = keystore.aliases();
-            while (aliases.hasMoreElements()) {
-                String alias = aliases.nextElement();
-                Certificate certificate = keystore.getCertificate(alias);
-
-                System.out.println("Alias: " + alias);
-                System.out.println("Certificate: " + certificate);
-                X509Certificate keyStoreX509Certificate = (X509Certificate)certificate;
-                if(issuerCN.equals(extractIssuerCN(keyStoreX509Certificate)))
-                {
-                    certificatesMap.put(alias, certificate);
-                }
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return certificatesMap;
     }
     public Map getAllFromStore(String store,String password) {
         Map<String, Certificate> certificatesMap = new HashMap<>();
@@ -581,90 +388,6 @@ public class AdminService {
         }
         return certificatesMap;
     }
-//    public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
-//        List<X509Certificate> certificates = new ArrayList<>();
-//        List<X509Certificate> newCertificates = new ArrayList<>(); // New list to hold newly discovered certificates
-//        certificates.addAll(getCertificatesSignedByCA(caAlias, keyStorePath, keyStorePassword));
-//
-//        for (X509Certificate certificate : certificates) {
-//            String alias = certificate.getSubjectX500Principal().getName();
-//            List<X509Certificate> signedCertificates = getAllCertificatesSignedByCA(alias, keyStorePath, keyStorePassword);
-//            if (signedCertificates != null && !signedCertificates.isEmpty()) {
-//                newCertificates.addAll(signedCertificates); // Add newly discovered certificates to the new list
-//            }
-//        }
-//
-//        certificates.addAll(newCertificates); // Add all newly discovered certificates to the certificates list
-//
-//        return certificates;
-//    }
-//public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
-//    List<X509Certificate> certificates = new ArrayList<>();
-//    List<X509Certificate> newCertificates = new ArrayList<>();
-//
-//    certificates.addAll(getCertificatesSignedByCA(caAlias, keyStorePath, keyStorePassword));
-//
-//    int index = 0;
-//    while (index < certificates.size()) {
-//        X509Certificate certificate = certificates.get(index);
-//        String alias = certificate.getSubjectX500Principal().getName();
-//        List<X509Certificate> signedCertificates = getCertificatesSignedByCA(alias, keyStorePath, keyStorePassword);
-//        if (signedCertificates != null && !signedCertificates.isEmpty()) {
-//            for (X509Certificate signedCertificate : signedCertificates) {
-//                if (!certificates.contains(signedCertificate) && !newCertificates.contains(signedCertificate)) {
-//                    newCertificates.add(signedCertificate);
-//                }
-//            }
-//        }
-//        index++;
-//        if (index >= certificates.size() && !newCertificates.isEmpty()) {
-//            certificates.addAll(newCertificates);
-//            index = 0;
-//            newCertificates.clear();
-//        }
-//    }
-//
-//    return certificates;
-//}
-//    public static List<X509Certificate> getCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
-//        List<X509Certificate> certificates = new ArrayList<>();
-//        try (InputStream is = new FileInputStream(keyStorePath)) {
-//            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-//            keyStore.load(is, keyStorePassword.toCharArray());
-//
-//            X509Certificate caCertificate = (X509Certificate) keyStore.getCertificate(caAlias);
-//            Enumeration<String> aliases = keyStore.aliases();
-//            while (aliases.hasMoreElements()) {
-//                String alias = aliases.nextElement();
-//                Certificate certificate = keyStore.getCertificate(alias);
-//                if (certificate instanceof X509Certificate) {
-//                    X509Certificate x509Certificate = (X509Certificate) certificate;
-//                    if (isSignedBy(x509Certificate, caCertificate)) {
-//                        certificates.add(x509Certificate);
-//                    }
-//                }
-//            }
-//        }
-//
-//        return certificates;
-//    }
-//
-//    /**
-//     * Checks if a certificate is signed by a given CA certificate.
-//     *
-//     * @param certificate The certificate to check
-//     * @param caCertificate The CA certificate to verify against
-//     * @return true if the certificate is signed by the given CA certificate, false otherwise
-//     */
-//    public static boolean isSignedBy(X509Certificate certificate, X509Certificate caCertificate) {
-//        try {
-//            certificate.verify(caCertificate.getPublicKey());
-//            return true;
-//        } catch (Exception e) {
-//            return false;
-//        }
-//    }
-//
 public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias, String keyStorePath, String keyStorePassword) throws Exception {
     List<X509Certificate> certificates = new ArrayList<>();
     List<X509Certificate> newCertificates = new ArrayList<>();
@@ -764,7 +487,6 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
         // If CN is not found, return null
         return null;
     }
-
 
     public void getAliases(List<X509Certificate> certs) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
         String keystoreFile = "src/main/resources/static/example.jks";
