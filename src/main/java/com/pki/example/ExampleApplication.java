@@ -29,27 +29,27 @@ public class ExampleApplication {
 	private static AdminController adminController = new AdminController();
 
 	public static void main(String[] args) throws Exception {
-		context = SpringApplication.run(ExampleApplication.class, args);
-		//adminController.genCA(context);
-		keyStoreReader = (KeyStoreReader) context.getBean("keyStoreReader");
-		keyStoreWriter = (KeyStoreWriter) context.getBean("keyStoreWriter");
-		certExample = (CertificateExample) context.getBean("certificateExample");
-
+//		context = SpringApplication.run(ExampleApplication.class, args);
+//		//adminController.genCA(context);
+//		keyStoreReader = (KeyStoreReader) context.getBean("keyStoreReader");
+//		keyStoreWriter = (KeyStoreWriter) context.getBean("keyStoreWriter");
+//		certExample = (CertificateExample) context.getBean("certificateExample");
+//
 		com.pki.example.data.Certificate certificate = certExample.getCertificate();
-		System.out.println("Novi sertifikat:");
-		System.out.println(certificate.getX509Certificate());
+//		System.out.println("Novi sertifikat:");
+//		System.out.println(certificate.getX509Certificate());
+//
+//		// Inicijalizacija fajla za cuvanje sertifikata
+//		System.out.println("Cuvanje certifikata u jks fajl:");
+//		keyStoreWriter.loadKeyStore("src/main/resources/static/example.jks",  "password".toCharArray());
+//		PrivateKey pk = certificate.getIssuer().getPrivateKey();
+//		keyStoreWriter.write("cert1", pk, "password".toCharArray(), certificate.getX509Certificate());
+//		keyStoreWriter.saveKeyStore("src/main/resources/static/example.jks",  "password".toCharArray());
+//		System.out.println("Cuvanje certifikata u jks fajl zavrseno.");
 
-		// Inicijalizacija fajla za cuvanje sertifikata
-		System.out.println("Cuvanje certifikata u jks fajl:");
-		keyStoreWriter.loadKeyStore("src/main/resources/static/example.jks",  "password".toCharArray());
-		PrivateKey pk = certificate.getIssuer().getPrivateKey();
-		keyStoreWriter.write("cert1", pk, "password".toCharArray(), certificate.getX509Certificate());
-		keyStoreWriter.saveKeyStore("src/main/resources/static/example.jks",  "password".toCharArray());
-		System.out.println("Cuvanje certifikata u jks fajl zavrseno.");
-
-		System.out.println("Ucitavanje sertifikata iz jks fajla:");
-		Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/example.jks", "password", "cert1");
-		System.out.println(loadedCertificate);
+		//System.out.println("Ucitavanje sertifikata iz jks fajla:");
+		//Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/example.jks", "password", "cert1");
+		//System.out.println(loadedCertificate);
 
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
 		SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");

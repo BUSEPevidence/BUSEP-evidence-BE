@@ -30,26 +30,10 @@ public class AdminController {
     CRLService crlService = new CRLService();
 
     private static KeyStoreReader keyStoreReader;
-    PublicKey publicKey;
-    Issuer issuer;
-    @GetMapping("/generate-certificate")
-    public void genCA() throws Exception {
-        Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
-        Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
-        com.pki.example.data.Certificate certificate = adminService.getEndEntityCertificate(issuer,subject,"2023-03-23","2028-03-23");
-        adminService.generateCertificate("example","certTest","password",certificate);
-        publicKey = issuer.getPublicKey();
-    }
+
     @GetMapping("/certificate-validity")
     public void checkValidity(@RequestParam("alias") String alias) throws Exception {
-
-        //Issuer issuer = adminService.generateIssuer("IT sluzba","sluzba","IT","UNS-FTN","Katedra za informatiku","RS","itsluzba@uns.ac.rs","654321");
-        //PublicKey pk = adminService.getIssuerFromKeyStore();
-        //PublicKey pk = issuer.getPublicKey();
-        //Subject subject = adminService.generateSubject("Ivana Kovacevic", "Kovacevic", "Ivana", "UNS-FTN", "Katedra za informatiku", "RS", "kovacevic.ivana@uns.ac.rs", "123456");
         String isValid = adminService.checkValidationOfSign("example","password",alias);
-
-
     }
     @PostMapping("/create-root")
     public void createRoot(@RequestParam("root") String root,@RequestParam("yearsOfValidity") Integer yearsOfValidity) throws Exception {
@@ -105,17 +89,11 @@ public class AdminController {
     @PostMapping("/revoke-certificate")
     public void revokeCertificate(@RequestParam String alias) throws Exception {
         keyStoreReader = new KeyStoreReader();
-        //String alias = "ca";
-        //String keyStoreFileName = "example";
-        //String password = "password";
         Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", alias);
         crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
         List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA(alias,"src/main/resources/static/" + "example" + ".jks","password");
         System.out.println(listCert.size() + " eo size liste");
         adminService.getAliases(listCert);
-//        Map<String, Certificate> certificatesMap = new HashMap<>();
-//        certificatesMap = adminService.getAllCertificatesSignBy((X509Certificate) loadedCertificate);
-//        certificatesMap.forEach((alias, cert) -> crlService.revCert("", (X509Certificate) cert,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption"));
         listCert.forEach(x -> crlService.revCert("",x,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption"));
     }
 
@@ -124,7 +102,6 @@ public class AdminController {
         ArrayList<CertificateDTO> certificateList = new ArrayList<CertificateDTO>();
         Map<String, Certificate> certificatesMap = new HashMap<>();
         certificatesMap = adminService.getAllFromStore("example","password");
-        //certificatesMap.forEach((alias,certificate) -> System.out.println(alias + "\n Certificate: " + certificate));
         certificatesMap.forEach((alias, certificate) -> {
             String issuerName = adminService.extractIssuerCN((X509Certificate)certificate);
             String subjectName = adminService.extractSubjectCN((X509Certificate)certificate);
