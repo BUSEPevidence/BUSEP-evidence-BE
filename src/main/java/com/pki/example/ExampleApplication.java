@@ -29,11 +29,11 @@ public class ExampleApplication {
 	private static AdminController adminController = new AdminController();
 
 	public static void main(String[] args) throws Exception {
-//		context = SpringApplication.run(ExampleApplication.class, args);
-//		//adminController.genCA(context);
-//		keyStoreReader = (KeyStoreReader) context.getBean("keyStoreReader");
-//		keyStoreWriter = (KeyStoreWriter) context.getBean("keyStoreWriter");
-//		certExample = (CertificateExample) context.getBean("certificateExample");
+		context = SpringApplication.run(ExampleApplication.class, args);
+		//adminController.genCA(context);
+		keyStoreReader = (KeyStoreReader) context.getBean("keyStoreReader");
+		keyStoreWriter = (KeyStoreWriter) context.getBean("keyStoreWriter");
+		certExample = (CertificateExample) context.getBean("certificateExample");
 //
 		com.pki.example.data.Certificate certificate = certExample.getCertificate();
 //		System.out.println("Novi sertifikat:");
