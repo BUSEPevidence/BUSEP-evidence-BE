@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.math.BigInteger;
@@ -126,6 +127,33 @@ public class AdminController {
             Date endDate = ((X509Certificate) certificate).getNotAfter();
 
             certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, alias));
+        });
+        return new ResponseEntity<>(certificateList, HttpStatus.OK);
+    }
+    @GetMapping("/get-all-childs")
+    public ResponseEntity<ArrayList<CertificateDTO>> getChilds() throws Exception {
+        ArrayList<CertificateDTO> certificateList = new ArrayList<CertificateDTO>();
+        List<X509Certificate> childList = new ArrayList<X509Certificate>();
+        FileInputStream fis = new FileInputStream("src/main/resources/static/" + "example" + ".jks");
+        KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keystore.load(fis, "password".toCharArray());
+        fis.close();
+        Map<String, Certificate> certificatesMap = new HashMap<>();
+        childList = adminService.getAllCertificatesSignedByCA("ca1","src/main/resources/static/" + "example" + ".jks","password");
+        childList.forEach((certificate) -> {
+            String issuerName = adminService.extractIssuerCN(certificate);
+            String subjectName = adminService.extractSubjectCN(certificate);
+            String serialNumber =  certificate.getSerialNumber().toString();
+            Date startDate = certificate.getNotBefore();
+            Date endDate = certificate.getNotAfter();
+            String foundAlias="";
+            try {
+                    foundAlias = keystore.getCertificateAlias(certificate);
+            } catch (KeyStoreException e) {
+                throw new RuntimeException(e);
+            }
+
+            certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, foundAlias));
         });
         return new ResponseEntity<>(certificateList, HttpStatus.OK);
     }
