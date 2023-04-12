@@ -70,6 +70,7 @@ public class AdminController {
         else
         {
             System.out.println("Signer don't have valid certificate");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Singer certificate is not valid");
         }
         return ResponseEntity.ok("Created successfully");
     }
@@ -95,6 +96,7 @@ public class AdminController {
         else
         {
             System.out.println("Signer don't have valid certificate");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Singer certificate is not valid");
         }
         return ResponseEntity.ok("Created successfully");
     }
