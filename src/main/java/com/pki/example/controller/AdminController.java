@@ -132,6 +132,7 @@ public class AdminController {
     }
     @GetMapping("/get-all-childs")
     public ResponseEntity<ArrayList<CertificateDTO>> getChilds() throws Exception {
+        String alias = "ca1";
         ArrayList<CertificateDTO> certificateList = new ArrayList<CertificateDTO>();
         List<X509Certificate> childList = new ArrayList<X509Certificate>();
         FileInputStream fis = new FileInputStream("src/main/resources/static/" + "example" + ".jks");
@@ -139,21 +140,24 @@ public class AdminController {
         keystore.load(fis, "password".toCharArray());
         fis.close();
         Map<String, Certificate> certificatesMap = new HashMap<>();
-        childList = adminService.getAllCertificatesSignedByCA("ca1","src/main/resources/static/" + "example" + ".jks","password");
+        childList = adminService.getAllCertificatesSignedByCA(alias,"src/main/resources/static/" + "example" + ".jks","password");
         childList.forEach((certificate) -> {
-            String issuerName = adminService.extractIssuerCN(certificate);
-            String subjectName = adminService.extractSubjectCN(certificate);
-            String serialNumber =  certificate.getSerialNumber().toString();
-            Date startDate = certificate.getNotBefore();
-            Date endDate = certificate.getNotAfter();
             String foundAlias="";
             try {
-                    foundAlias = keystore.getCertificateAlias(certificate);
+                foundAlias = keystore.getCertificateAlias(certificate);
             } catch (KeyStoreException e) {
                 throw new RuntimeException(e);
             }
+            if(!foundAlias.equals(alias)) {
 
-            certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, foundAlias));
+                String issuerName = adminService.extractIssuerCN(certificate);
+                String subjectName = adminService.extractSubjectCN(certificate);
+                String serialNumber = certificate.getSerialNumber().toString();
+                Date startDate = certificate.getNotBefore();
+                Date endDate = certificate.getNotAfter();
+
+                certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, foundAlias));
+            }
         });
         return new ResponseEntity<>(certificateList, HttpStatus.OK);
     }
