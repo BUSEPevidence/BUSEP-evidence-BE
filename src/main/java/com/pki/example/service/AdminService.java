@@ -479,6 +479,25 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
         return null;
     }
 
+    public X509Certificate findCertificateByAlias(String alias) throws Exception {
+        // Check if the alias exists in the keystore
+        String keystoreFile = "src/main/resources/static/example.jks";
+        String keystorePassword = "password";
+        KeyStore keyStore = KeyStore.getInstance("JKS");
+        FileInputStream fis = new FileInputStream(keystoreFile);
+        keyStore.load(fis, keystorePassword.toCharArray());
+        fis.close();
+        if (keyStore.containsAlias(alias)) {
+            Certificate certificate = keyStore.getCertificate(alias);
+            if (certificate instanceof X509Certificate) {
+                return (X509Certificate) certificate;
+            } else {
+                throw new Exception("Certificate with alias " + alias + " is not an X509Certificate");
+            }
+        } else {
+            throw new Exception("Certificate with alias " + alias + " not found in keystore");
+        }
+    }
     public void getAliases(List<X509Certificate> certs) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
         String keystoreFile = "src/main/resources/static/example.jks";
         String keystorePassword = "password";

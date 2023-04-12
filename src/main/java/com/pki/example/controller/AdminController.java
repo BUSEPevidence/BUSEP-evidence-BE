@@ -1,24 +1,28 @@
 package com.pki.example.controller;
 
-import com.pki.example.data.Issuer;
-import com.pki.example.data.Subject;
 import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.CertificateDTO;
+import com.pki.example.dto.DownloadDTO;
 import com.pki.example.dto.RootCertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileInputStream;
+import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.math.BigInteger;
-import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -166,7 +170,20 @@ public class AdminController {
         List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA("one","src/main/resources/static/" + "example" + ".jks","password");
         adminService.getAliases(listCert);
     }
+    @PostMapping("/download-certificate") // Endpoint za preuzimanje sertifikata po alias-u
+    public ResponseEntity<DownloadDTO> downloadCertificate(@RequestBody DownloadDTO downloadDTO) throws Exception {
+        System.out.println("usao");
+        System.out.println(downloadDTO.getPath() + " " + downloadDTO.getAlias());
+        X509Certificate certificate = adminService.findCertificateByAlias("ca1"); // Your X509Certificate object
+        byte[] certBytes = certificate.getEncoded();
+        String fileName = "ca1" + ".crt"; // Desired file name
+        String filePath = "src\\main\\resources\\downloaded-certificates\\" + fileName; // Desired file path
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        fileOutputStream.write(certBytes);
+        fileOutputStream.close();
+        return new ResponseEntity<>(downloadDTO, HttpStatus.OK);
 
+    }
     @GetMapping("/get-trusted")
     public ArrayList<String> getTrusted() throws Exception {
         return adminService.getTrustedAliases();
