@@ -554,10 +554,16 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
                 X500Principal issuer = x509cert.getIssuerX500Principal();
                 X500Principal subject = x509cert.getSubjectX500Principal();
                 if (x509cert.getKeyUsage() != null && x509cert.getKeyUsage().length > 5 && x509cert.getKeyUsage()[5]) {
-                    aliases.add(alias);
+                    String isValid = checkValidationOfSign("example","password",alias);
+                    if(isValid.equals("Certificate is valid.")){
+                        aliases.add(alias);
+                    }
                 }
                 if (issuer.equals(subject)){
-                    aliases.add(alias);
+                    String isValid = checkValidationOfSign("example","password",alias);
+                    if(isValid.equals("Certificate is valid.")){
+                        aliases.add(alias);
+                    }
                 }
             }
         }
