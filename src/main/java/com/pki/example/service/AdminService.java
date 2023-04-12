@@ -177,18 +177,13 @@ public class AdminService {
     {
         return BigInteger.valueOf(serialNumberBase++);
     }
-    public static X509Certificate createTrustAnchor(
-            KeyPair keyPair, RootCertificateDTO dto)
-            throws OperatorCreationException, CertificateException
-    {
-
+    public static X509Certificate createTrustAnchor(KeyPair keyPair, RootCertificateDTO dto)
+            throws OperatorCreationException, CertificateException {
         if(isAliasUsed(dto.rootName)){
             System.out.println("Alias is used choose another!");
             return null;
         }
         //X500Name name = new X500Name("CN=" + rootName);
-
-
         //Umjesto x500Name napravim x500Principal subject-a
         X500Principal subject = new X500Principal("CN=" + dto.rootName + "," + "O=" + dto.organization + ","
                 + "OU=" + dto.orgainzationUnit + "," + "C=" + dto.country);
@@ -199,7 +194,6 @@ public class AdminService {
         calendar.add(Calendar.YEAR,dto.yearsOfValidity);
         Date dateOfExpirement = calendar.getTime();
 
-
         //Umjesto name proslijedim subjecta
         X509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
                 subject,
@@ -209,13 +203,10 @@ public class AdminService {
                 subject,
                 keyPair.getPublic());
 
-
         ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(keyPair.getPrivate());
 
-
         JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
-
 
         return converter.getCertificate(certBldr.build(signer));
     }

@@ -53,7 +53,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("There is no certificate with alias: " + alias);
         }
         String isValid = adminService.checkValidationOfSign("example","password",alias);
-        if(isValid.equals("")) {
+        if(isValid.equals("Certificate is valid.")) {
             X509Certificate x509Certificate = (X509Certificate) certificate;
             String signer = alias;
             PrivateKey key = adminService.readKeyFromKeyStore(signer);
@@ -78,7 +78,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("There is no certificate with alias: " + alias);
         }
         String isValid = adminService.checkValidationOfSign("example","password",alias);
-        if(isValid.equals("")) {
+        if(isValid.equals("Certificate is valid.")) {
             X509Certificate x509Certificate = (X509Certificate) certificate;
             String signer = alias;
             PrivateKey key = adminService.readKeyFromKeyStore(signer);
