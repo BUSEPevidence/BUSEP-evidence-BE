@@ -177,18 +177,13 @@ public class AdminService {
     {
         return BigInteger.valueOf(serialNumberBase++);
     }
-    public static X509Certificate createTrustAnchor(
-            KeyPair keyPair, RootCertificateDTO dto)
-            throws OperatorCreationException, CertificateException
-    {
-
+    public static X509Certificate createTrustAnchor(KeyPair keyPair, RootCertificateDTO dto)
+            throws OperatorCreationException, CertificateException {
         if(isAliasUsed(dto.rootName)){
             System.out.println("Alias is used choose another!");
             return null;
         }
         //X500Name name = new X500Name("CN=" + rootName);
-
-
         //Umjesto x500Name napravim x500Principal subject-a
         X500Principal subject = new X500Principal("CN=" + dto.rootName + "," + "O=" + dto.organization + ","
                 + "OU=" + dto.orgainzationUnit + "," + "C=" + dto.country);
@@ -199,7 +194,6 @@ public class AdminService {
         calendar.add(Calendar.YEAR,dto.yearsOfValidity);
         Date dateOfExpirement = calendar.getTime();
 
-
         //Umjesto name proslijedim subjecta
         X509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
                 subject,
@@ -209,13 +203,10 @@ public class AdminService {
                 subject,
                 keyPair.getPublic());
 
-
         ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                 .setProvider("BC").build(keyPair.getPrivate());
 
-
         JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
-
 
         return converter.getCertificate(certBldr.build(signer));
     }
@@ -545,5 +536,32 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public ArrayList<String> getTrustedAliases() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException{
+        String keystoreFile = "src/main/resources/static/example.jks";
+        String keystorePassword = "password";
+        ArrayList<String> aliases = new ArrayList<String>();
+        FileInputStream fis = new FileInputStream(keystoreFile);
+        KeyStore keystore = KeyStore.getInstance("JKS");
+        keystore.load(fis, keystorePassword.toCharArray());
+        Enumeration<String> aliasEnum = keystore.aliases();
+        while (aliasEnum.hasMoreElements()) {
+            String alias = aliasEnum.nextElement();
+            Certificate cert = keystore.getCertificate(alias);
+            if (cert instanceof X509Certificate) {
+                X509Certificate x509cert = (X509Certificate) cert;
+                X500Principal issuer = x509cert.getIssuerX500Principal();
+                X500Principal subject = x509cert.getSubjectX500Principal();
+                if (x509cert.getKeyUsage() != null && x509cert.getKeyUsage().length > 5 && x509cert.getKeyUsage()[5]) {
+                    aliases.add(alias);
+                }
+                if (issuer.equals(subject)){
+                    aliases.add(alias);
+                }
+            }
+        }
+        fis.close();
+        return aliases;
     }
 }

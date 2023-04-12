@@ -49,48 +49,54 @@ public class AdminController {
         return ResponseEntity.ok().body("Root certificate successfully created.");
     }
     @PostMapping("/create-ca")
-    public void createCA(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
+    public ResponseEntity<?> createCA(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
         Certificate certificate = adminService.readCertificateFromKeyStore("example","password",alias);
         if(certificate == null) {
             System.out.println("There is no certificate with alias: " + alias);
-            return;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("There is no certificate with alias: " + alias);
         }
         String isValid = adminService.checkValidationOfSign("example","password",alias);
-        if(isValid.equals("")) {
+        if(isValid.equals("Certificate is valid.")) {
             X509Certificate x509Certificate = (X509Certificate) certificate;
             String signer = alias;
             PrivateKey key = adminService.readKeyFromKeyStore(signer);
             X509Certificate cert = adminService.createCACertificate(x509Certificate, key, keyPair.getPublic(), 5,cAandEECertificateDTO,certName);
-            if(cert == null ) return;
+            if(cert == null ) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Alias is already taken");
+            }
             adminService.generateCert("example", certName, "password", cert, keyPair);
         }
         else
         {
             System.out.println("Signer don't have valid certificate");
         }
+        return ResponseEntity.ok("Created successfully");
     }
     @PostMapping("/create-end-entity")
-    public void createEndEntity(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
+    public ResponseEntity<?> createEndEntity(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
         Certificate certificate = adminService.readCertificateFromKeyStore("example","password",alias);
         if(certificate == null) {
             System.out.println("There is no certificate with alias: " + alias);
-            return;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("There is no certificate with alias: " + alias);
         }
         String isValid = adminService.checkValidationOfSign("example","password",alias);
-        if(isValid.equals("")) {
+        if(isValid.equals("Certificate is valid.")) {
             X509Certificate x509Certificate = (X509Certificate) certificate;
             String signer = alias;
             PrivateKey key = adminService.readKeyFromKeyStore(signer);
             X509Certificate cert = adminService.createEndEntity(x509Certificate, key, keyPair.getPublic(),cAandEECertificateDTO,certName);
-            if(cert == null ) return;
+            if(cert == null ) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Alias is already taken");
+            }
             adminService.generateCert("example", certName, "password", cert, keyPair);
         }
         else
         {
             System.out.println("Signer don't have valid certificate");
         }
+        return ResponseEntity.ok("Created successfully");
     }
 
     @PostMapping("/revoke-certificate")
@@ -127,6 +133,10 @@ public class AdminController {
         adminService.getAliases(listCert);
     }
 
+    @GetMapping("/get-trusted")
+    public ArrayList<String> getTrusted() throws Exception {
+        return adminService.getTrustedAliases();
+    }
 
     private KeyPair generateKeyPair() {
         try {
