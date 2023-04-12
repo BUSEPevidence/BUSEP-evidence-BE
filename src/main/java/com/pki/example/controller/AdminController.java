@@ -39,10 +39,14 @@ public class AdminController {
         return ResponseEntity.ok().body(isValid);
     }
     @PostMapping("/create-root")
-    public void createRoot(@RequestBody RootCertificateDTO dto) throws Exception {
+    public ResponseEntity<String> createRoot(@RequestBody RootCertificateDTO dto) throws Exception {
         KeyPair keyPair = adminService.generateKeyPair();
         X509Certificate certificate = adminService.createTrustAnchor(keyPair, dto);
+        if (certificate == null) {
+            return ResponseEntity.ok().body("Alias is already in use.");
+        }
         adminService.generateCert("example",dto.rootName,"password",certificate,keyPair);
+        return ResponseEntity.ok().body("Root certificate successfully created.");
     }
     @PostMapping("/create-ca")
     public void createCA(@RequestParam("alias") String alias,@RequestParam("certName") String certName,@RequestBody CAandEECertificateDTO cAandEECertificateDTO) throws Exception {
@@ -90,14 +94,15 @@ public class AdminController {
     }
 
     @PostMapping("/revoke-certificate")
-    public void revokeCertificate(@RequestBody String alias) throws Exception {
+    public ResponseEntity<String> revokeCertificate(@RequestBody String alias) throws Exception {
         keyStoreReader = new KeyStoreReader();
         Certificate loadedCertificate = keyStoreReader.readCertificate("src/main/resources/static/" + "example" + ".jks", "password", alias);
-        crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
+        String revokedString = crlService.revokeCertificate("",(X509Certificate) loadedCertificate,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption");
         List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA(alias,"src/main/resources/static/" + "example" + ".jks","password");
         System.out.println(listCert.size() + " eo size liste");
         adminService.getAliases(listCert);
         listCert.forEach(x -> crlService.revCert("",x,generateKeyPair().getPrivate(),"SHA256WithRSAEncryption"));
+        return ResponseEntity.ok().body(revokedString);
     }
 
     @GetMapping("/get-all-from-store")

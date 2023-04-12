@@ -86,7 +86,7 @@ public class CRLService {
         }
     }
 
-    public void revokeCertificate(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
+    public String revokeCertificate(String CRLKeyStore, X509Certificate certificate,PrivateKey caKey,String sigAlg){
         try {
             AdminService adminService = new AdminService();
             String crlFilePath = "src/main/resources/static/" + CRLKeyStore + "CRL.jks";
@@ -95,12 +95,12 @@ public class CRLService {
             saveCRLToFile(crl, crlFilePath);
             CRLService crlService = new CRLService();
             X509Certificate cert = adminService.printCertificateInfo(certificate);
-
-
     }
     catch (Exception e){
         e.getMessage();
+        return "Revoke failed.";
     }
+        return "Successfully revoked.";
     }
     public void checkRevoked(X509Certificate cert)
     {
