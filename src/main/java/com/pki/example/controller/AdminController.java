@@ -1,23 +1,28 @@
 package com.pki.example.controller;
 
-import com.pki.example.data.Issuer;
-import com.pki.example.data.Subject;
 import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.CertificateDTO;
+import com.pki.example.dto.DownloadDTO;
 import com.pki.example.dto.RootCertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.math.BigInteger;
-import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -129,12 +134,56 @@ public class AdminController {
         });
         return new ResponseEntity<>(certificateList, HttpStatus.OK);
     }
+    @GetMapping("/get-all-childs")
+    public ResponseEntity<ArrayList<CertificateDTO>> getChilds() throws Exception {
+        String alias = "ca1";
+        ArrayList<CertificateDTO> certificateList = new ArrayList<CertificateDTO>();
+        List<X509Certificate> childList = new ArrayList<X509Certificate>();
+        FileInputStream fis = new FileInputStream("src/main/resources/static/" + "example" + ".jks");
+        KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keystore.load(fis, "password".toCharArray());
+        fis.close();
+        Map<String, Certificate> certificatesMap = new HashMap<>();
+        childList = adminService.getAllCertificatesSignedByCA(alias,"src/main/resources/static/" + "example" + ".jks","password");
+        childList.forEach((certificate) -> {
+            String foundAlias="";
+            try {
+                foundAlias = keystore.getCertificateAlias(certificate);
+            } catch (KeyStoreException e) {
+                throw new RuntimeException(e);
+            }
+            if(!foundAlias.equals(alias)) {
+
+                String issuerName = adminService.extractIssuerCN(certificate);
+                String subjectName = adminService.extractSubjectCN(certificate);
+                String serialNumber = certificate.getSerialNumber().toString();
+                Date startDate = certificate.getNotBefore();
+                Date endDate = certificate.getNotAfter();
+
+                certificateList.add(new CertificateDTO(subjectName, issuerName, serialNumber, startDate, endDate, foundAlias));
+            }
+        });
+        return new ResponseEntity<>(certificateList, HttpStatus.OK);
+    }
     @GetMapping("/get-bellow")
     public void getBellow() throws Exception {
         List<X509Certificate> listCert = adminService.getAllCertificatesSignedByCA("one","src/main/resources/static/" + "example" + ".jks","password");
         adminService.getAliases(listCert);
     }
+    @PostMapping("/download-certificate") // Endpoint za preuzimanje sertifikata po alias-u
+    public ResponseEntity<DownloadDTO> downloadCertificate(@RequestBody DownloadDTO downloadDTO) throws Exception {
+        System.out.println("usao");
+        System.out.println(downloadDTO.getPath() + " " + downloadDTO.getAlias());
+        X509Certificate certificate = adminService.findCertificateByAlias("ca1"); // Your X509Certificate object
+        byte[] certBytes = certificate.getEncoded();
+        String fileName = "ca1" + ".crt"; // Desired file name
+        String filePath = "src\\main\\resources\\downloaded-certificates\\" + fileName; // Desired file path
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        fileOutputStream.write(certBytes);
+        fileOutputStream.close();
+        return new ResponseEntity<>(downloadDTO, HttpStatus.OK);
 
+    }
     @GetMapping("/get-trusted")
     public ArrayList<String> getTrusted() throws Exception {
         return adminService.getTrustedAliases();
