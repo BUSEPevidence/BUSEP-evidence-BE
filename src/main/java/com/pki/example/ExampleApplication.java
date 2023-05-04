@@ -10,6 +10,9 @@ import org.springframework.boot.ApplicationContextFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.FileInputStream;
 import java.security.*;
@@ -17,6 +20,9 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 
 @SpringBootApplication
+@EnableAsync
+@EnableScheduling
+@EnableJpaRepositories
 public class ExampleApplication {
 
 	private static CertificateExample certExample;
