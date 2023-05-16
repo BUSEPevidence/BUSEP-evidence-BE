@@ -60,6 +60,8 @@ public class AuthenticationService {
     public User register(RegisterRequest request) throws NoSuchAlgorithmException {
         String salt = generateSalt();
         User user = new User(request.getUsername(),hashPassword(request.getPassword(), salt),request.getFirstname(),request.getLastname(),request.getAddress(),request.getCity(),request.getState(),request.getNumber(),request.getTitle(),salt,request.isAdminApprove());
+        String activationCode = jwtService.generateCodeForRegister(user);
+        user.setActivationCode(activationCode);
         System.out.println(user.getUsername() + " " + user.getPassword());
         userRepository.save(user);
 //        var user = User.builder()
@@ -100,6 +102,11 @@ public class AuthenticationService {
     }
     public User getUser(RegisterRequest request) throws NoSuchAlgorithmException {
         User user = userRepository.findOneByUsername(request.getUsername());
+        return user;
+    }
+    public User getUserByCode(String request) throws NoSuchAlgorithmException {
+        User user = userRepository.findOneByUsername(request);
+
         return user;
     }
 }
