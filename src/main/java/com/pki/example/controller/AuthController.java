@@ -47,7 +47,6 @@ public class AuthController {
         System.out.println("usao u approve");
         User retUser = authenticationService.getUser(request);
         EmailDetails emailDetails = new EmailDetails();
-        //emailDetails.setRecipient();
         emailDetails.setMsgBody("Welcome!<br/>" +
                 "You can <a href=\"http://localhost:4200/auth/login?tracking="+ retUser.getActivationCode() +"\">Activate your account here!<a/></h2> <br/>");
         emailDetails.setSubject("Welcome email");

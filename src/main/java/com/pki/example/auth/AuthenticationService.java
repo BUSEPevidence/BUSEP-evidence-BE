@@ -42,44 +42,17 @@ public class AuthenticationService {
 
         return Base64.getEncoder().encodeToString(hashBytes);
     }
-
-//    public static String generateHash(String word) throws NoSuchAlgorithmException {
-//        String seed = "my_seed"; // Fixed seed value
-//        String input = seed + word;
-//
-//        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-//        byte[] hashBytes = messageDigest.digest(input.getBytes());
-//
-//        StringBuilder hash = new StringBuilder();
-//        for (byte b : hashBytes) {
-//            hash.append(String.format("%02x", b));
-//        }
-//        return hash.toString();
-//    }
-
     public User register(RegisterRequest request) throws NoSuchAlgorithmException {
         String salt = generateSalt();
         User user = new User(request.getUsername(),hashPassword(request.getPassword(), salt),request.getFirstname(),request.getLastname(),request.getAddress(),request.getCity(),request.getState(),request.getNumber(),request.getTitle(),salt,request.isAdminApprove());
         String activationCode = jwtService.generateCodeForRegister(user);
         user.setActivationCode(activationCode);
-        System.out.println(user.getUsername() + " " + user.getPassword());
         userRepository.save(user);
-//        var user = User.builder()
-//                .username(request.getEmail())
-//                .password(passwordEncoder.encode(request.getPassword()))
-//                .roles(String.valueOf(Role.USER))
-//                .build();
-//        userRepository.save();
 
         return user;
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
-//        authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(
-//                        request.getUsername(),request.getPassword()
-//                )
-//        );
         User saltUser = userRepository.findOneByUsername(request.getUsername());
         User user = userRepository.findByUsernameAndPassword(request.getUsername(), hashPassword(request.getPassword(),saltUser.getSalt()));
         var jwtToken = "";
@@ -95,7 +68,6 @@ public class AuthenticationService {
     }
     public User approve(String request) throws NoSuchAlgorithmException {
         User user = userRepository.findByActivationCode(request);
-        System.out.println(user.getUsername() + " eo po act");
         user.setAdminApprove(true);
         userRepository.save(user);
         return user;
