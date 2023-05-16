@@ -5,6 +5,7 @@ import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.persistence.*;
 import java.util.Collection;
@@ -24,10 +25,42 @@ public class User implements UserDetails {
 
     private String password;
 
-    public User(String username, String password) {
+    private String firstname;
+
+    private String lastname;
+
+    private String address;
+
+    private String city;
+
+    private String state;
+
+    private String number;
+
+    private String title;
+
+    private String salt;
+
+    private boolean adminApprove;
+
+    private String activationCode;
+
+
+    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, String title, String salt, boolean adminApprove) {
+        this.activationCode = RandomStringUtils.randomAlphanumeric(32);
         this.username = username;
         this.password = password;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.address = address;
+        this.city = city;
+        this.state = state;
+        this.number = number;
+        this.title = title;
+        this.salt = salt;
+        this.adminApprove = adminApprove;
     }
+
 
 //    @Enumerated(EnumType.STRING)
 //    private Role role;
