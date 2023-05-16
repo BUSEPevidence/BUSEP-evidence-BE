@@ -35,7 +35,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequest request) throws NoSuchAlgorithmException {
-        System.out.println("usao u authenticate");
         String token = authenticationService.authenticate(request).getToken();
         if(!token.equals(""))
             return ResponseEntity.ok(token);
@@ -44,7 +43,6 @@ public class AuthController {
     }
     @PostMapping("/approve")
     public ResponseEntity<String> approveRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
-        System.out.println("usao u approve");
         User retUser = authenticationService.getUser(request);
         EmailDetails emailDetails = new EmailDetails();
         emailDetails.setMsgBody("Welcome!<br/>" +
@@ -59,7 +57,6 @@ public class AuthController {
 
     @GetMapping("/visitLink")
     public void visitedLink(@RequestParam("request") String request) throws NoSuchAlgorithmException {
-        System.out.println(request);
         User retUser = null;
         String username = jwtService.extractUsername(request);
         UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
