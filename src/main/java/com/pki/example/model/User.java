@@ -8,7 +8,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -45,8 +48,13 @@ public class User implements UserDetails {
 
     private String activationCode;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_role",
+            joinColumns = @JoinColumn(name = "userId", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "roleId", referencedColumnName = "id"))
+    private List<Role> roles;
 
-    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, String title, String salt, boolean adminApprove) {
+    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, String title, String salt, boolean adminApprove,Role role) {
         this.activationCode = RandomStringUtils.randomAlphanumeric(32);
         this.username = username;
         this.password = password;
@@ -58,13 +66,21 @@ public class User implements UserDetails {
         this.number = number;
         this.title = title;
         this.salt = salt;
+        this.roles = new ArrayList<Role>();
+        this.roles.add(role);
         this.adminApprove = adminApprove;
     }
 
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("role.name()"));
+        List<Permission> permissions = new ArrayList<>();;
+        for(Role role : roles)
+        {
+            for(Permission p : role.getPermissions()) {
+                permissions.add(p);
+            }
+        }
+        return permissions;
     }
 
     @Override

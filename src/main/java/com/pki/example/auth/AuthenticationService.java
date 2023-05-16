@@ -44,7 +44,7 @@ public class AuthenticationService {
     }
     public User register(RegisterRequest request) throws NoSuchAlgorithmException {
         String salt = generateSalt();
-        User user = new User(request.getUsername(),hashPassword(request.getPassword(), salt),request.getFirstname(),request.getLastname(),request.getAddress(),request.getCity(),request.getState(),request.getNumber(),request.getTitle(),salt,request.isAdminApprove());
+        User user = new User(request.getUsername(),hashPassword(request.getPassword(), salt),request.getFirstname(),request.getLastname(),request.getAddress(),request.getCity(),request.getState(),request.getNumber(),request.getTitle(),salt,request.isAdminApprove(),null);
         String activationCode = jwtService.generateCodeForRegister(user);
         user.setActivationCode(activationCode);
         userRepository.save(user);
