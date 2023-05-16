@@ -1,10 +1,10 @@
 package com.pki.example.controller;
 
-import com.pki.example.dto.CAandEECertificateDTO;
-import com.pki.example.dto.CertificateDTO;
-import com.pki.example.dto.DownloadDTO;
-import com.pki.example.dto.RootCertificateDTO;
+import com.pki.example.dto.*;
 import com.pki.example.keystores.KeyStoreReader;
+import com.pki.example.model.Permission;
+import com.pki.example.model.PermissionEnum;
+import com.pki.example.model.RoleEnum;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,6 +200,93 @@ public class AdminController {
             e.printStackTrace();
         }
         return null;
+    }
+    @PostMapping("/add-role-permission")
+    public void addPermissionToRole(@RequestBody RolePermDTO rolePerm) throws Exception {
+        int id = 0;
+        if(RoleEnum.ROLE_ADMIN.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_ADMIN.ordinal();
+        }
+        else if (RoleEnum.ROLE_HR.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_HR.ordinal();
+        }
+        else if (RoleEnum.ROLE_ENGINEER.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_ENGINEER.ordinal();
+        }
+        else if (RoleEnum.ROLE_MANAGER.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_MANAGER.ordinal();
+        }
+        else
+        {
+            id = 0;
+        }
+        id++;
+        Permission perm;
+        int permId = 0;
+        for(PermissionEnum p : PermissionEnum.values())
+        {
+            System.out.println(p);
+            System.out.println(rolePerm.getPermission());
+            if(p.toString().equals(rolePerm.getPermission()))
+            {
+                System.out.println(p.ordinal() + " ordinal");
+                permId = p.ordinal() + 1;
+            }
+
+        }
+        System.out.println(permId + " permid");
+
+        perm = adminService.FindPermission(permId);
+        System.out.println(perm.getName() + " nameizcont");
+        adminService.AddRolePermissions(id,perm);
+    }
+
+    @PostMapping("/delete-role-permission")
+    public void deletePermissionToRole(@RequestBody RolePermDTO rolePerm) throws Exception {
+        int id = 0;
+        if(RoleEnum.ROLE_ADMIN.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_ADMIN.ordinal();
+        }
+        else if (RoleEnum.ROLE_HR.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_HR.ordinal();
+        }
+        else if (RoleEnum.ROLE_ENGINEER.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_ENGINEER.ordinal();
+        }
+        else if (RoleEnum.ROLE_MANAGER.toString().equals(rolePerm.getRole()))
+        {
+            id = RoleEnum.ROLE_MANAGER.ordinal();
+        }
+        else
+        {
+            id = 0;
+        }
+        id++;
+        Permission perm;
+        int permId = 0;
+        for(PermissionEnum p : PermissionEnum.values())
+        {
+            System.out.println(p);
+            System.out.println(rolePerm.getPermission());
+            if(p.toString().equals(rolePerm.getPermission()))
+            {
+                System.out.println(p.ordinal() + " ordinal");
+                permId = p.ordinal() + 1;
+            }
+
+        }
+        System.out.println(permId + " permid");
+
+        perm = adminService.FindPermission(permId);
+        System.out.println(perm.getName() + " nameizcont");
+        adminService.DeleteRolePermission(id,perm);
     }
 
 

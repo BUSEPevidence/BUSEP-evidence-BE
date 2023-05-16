@@ -9,6 +9,10 @@ import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.RootCertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
+import com.pki.example.model.Permission;
+import com.pki.example.model.Role;
+import com.pki.example.repo.PermissionRepository;
+import com.pki.example.repo.RoleRepository;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -63,6 +67,12 @@ public class AdminService {
     private static KeyStoreWriter keyStoreWriter;
 
     private static ApplicationContext context;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
 
     @Autowired
     private CRLService crlService = new CRLService();
@@ -588,5 +598,46 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
         }
         fis.close();
         return aliases;
+    }
+    public Permission FindPermission(int Id)
+    {
+        Permission permission = permissionRepository.findOneById(Id);
+
+
+        return permission;
+    }
+    public String AddRolePermissions(int id,Permission permission)
+    {
+
+        Role role = roleRepository.findOneById(id);
+        System.out.println(role.getName() + " dajemo " + permission.getName());
+        List<Permission> permissionList = role.getPermissions();
+        permissionList.add(permission);
+        role.setPermissions(permissionList);
+        roleRepository.save(role);
+
+
+        return "Added";
+    }
+    public String DeleteRolePermission(int id,Permission permission)
+    {
+
+        List<Permission> permList = new ArrayList<>();
+        Role role = roleRepository.findOneById(id);
+        System.out.println(role.getName() + " dajemo " + permission.getName());
+        List<Permission> permissionList = role.getPermissions();
+        for(Permission p : permissionList)
+        {
+            if(p.getId() != permission.getId())
+            {
+                permList.add(p);
+            }
+        }
+        permissionList.add(permission);
+        role.setPermissions(permList);
+        roleRepository.save(role);
+
+
+        return "Added";
     }
 }

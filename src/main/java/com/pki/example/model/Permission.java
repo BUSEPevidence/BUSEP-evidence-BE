@@ -13,7 +13,7 @@ public class Permission implements GrantedAuthority {
     @javax.persistence.Id
     @Column(name="id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long Id;
+    int id;
     @Column(name="name")
     String name;
     @JsonIgnore
@@ -22,12 +22,12 @@ public class Permission implements GrantedAuthority {
         return name;
     }
 
-    public Long getId() {
-        return Id;
+    public int getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        Id = id;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {

@@ -19,7 +19,7 @@ public class Role implements GrantedAuthority {
     @Id
     @Column(name="id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long Id;
+    int id;
     @Column(name="name")
     String name;
     @ManyToMany(fetch = FetchType.EAGER)
@@ -43,12 +43,12 @@ public class Role implements GrantedAuthority {
         return name;
     }
     @JsonIgnore
-    public Long getId() {
-        return Id;
+    public int getId() {
+        return id;
     }
 
-    public void setId(Long Id) {
-        this.Id = Id;
+    public void setId(int Id) {
+        this.id = Id;
     }
 
     public List<Permission> getPermissions() {
