@@ -11,8 +11,10 @@ import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
 import com.pki.example.model.Permission;
 import com.pki.example.model.Role;
+import com.pki.example.model.User;
 import com.pki.example.repo.PermissionRepository;
 import com.pki.example.repo.RoleRepository;
+import com.pki.example.repo.UserRepository;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -73,6 +75,9 @@ public class AdminService {
 
     @Autowired
     private PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private CRLService crlService = new CRLService();
@@ -640,4 +645,5 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
 
         return "Added";
     }
+
 }

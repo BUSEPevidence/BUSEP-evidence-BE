@@ -7,6 +7,7 @@ import com.pki.example.email.service.EmailService;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,17 +30,20 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
-        return ResponseEntity.ok(authenticationService.register(request));
+    public ResponseEntity<RegisterRequest> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
+        ResponseEntity.ok(authenticationService.register(request));
+        return ResponseEntity.ok(request);
     }
 
     @PostMapping("/login")
     public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequest request) throws NoSuchAlgorithmException {
         String token = authenticationService.authenticate(request).getToken();
-        if(!token.equals(""))
-            return ResponseEntity.ok(token);
-        else
-            return ResponseEntity.ok("User not found");
+        System.out.println(request.getUsername() + " " + request.getPassword());
+        if (!token.equals("")) {
+            return ResponseEntity.ok().body("{\"token\": \"" + token + "\"}");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
+        }
     }
     @PostMapping("/approve")
     public ResponseEntity<String> approveRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
@@ -89,5 +94,17 @@ public class AuthController {
             if (!request.equals("regular"))
                 retUser = authenticationService.approve(request,check);
         }
+    }
+    @GetMapping("/getRoles")
+    public ResponseEntity<String> getRoles(@RequestParam("request") String request) throws NoSuchAlgorithmException {
+        String retString = "";
+        List<Role> roles = authenticationService.GetAllRoles(request);
+        for(Role role : roles)
+        {
+            retString +=role.getName() + ",";
+        }
+        retString = retString.substring(0, retString.length() - 1);
+        System.out.println(retString);
+        return ResponseEntity.ok().body("{\"roles\": \"" + retString + "\"}");
     }
 }

@@ -40,8 +40,6 @@ public class User implements UserDetails {
 
     private String number;
 
-    private String title;
-
     private String salt;
 
     private boolean adminApprove;
@@ -58,7 +56,7 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "roleId", referencedColumnName = "id"))
     private List<Role> roles;
 
-    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, String title, String salt, boolean adminApprove,Role role,Date dateAccepted,Date dateDenial) {
+    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, List<Role> title, String salt, boolean adminApprove,Role role,Date dateAccepted,Date dateDenial) {
         this.activationCode = RandomStringUtils.randomAlphanumeric(32);
         this.username = username;
         this.password = password;
@@ -68,10 +66,9 @@ public class User implements UserDetails {
         this.city = city;
         this.state = state;
         this.number = number;
-        this.title = title;
         this.salt = salt;
-        this.roles = new ArrayList<Role>();
-        this.roles.add(role);
+        //this.roles = new ArrayList<Role>();
+        this.roles = title;
         this.adminApprove = adminApprove;
         this.dateAccepted = dateAccepted;
         this.dateDenial = dateDenial;
