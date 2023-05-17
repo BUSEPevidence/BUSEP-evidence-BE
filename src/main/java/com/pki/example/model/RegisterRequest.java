@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -26,9 +28,7 @@ public class RegisterRequest {
 
     private String number;
 
-    private String title;
-
-    private String salt;
+    private List<String> title;
 
     private boolean adminApprove;
 }

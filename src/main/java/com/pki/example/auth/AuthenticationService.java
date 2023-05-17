@@ -13,9 +13,7 @@ import org.springframework.stereotype.Service;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -47,15 +45,73 @@ public class AuthenticationService {
     }
     public User register(RegisterRequest request) throws NoSuchAlgorithmException {
         DenialRequests dr = denialRequestsRepository.findOneByEmail(request.getUsername());
-        if(dr.getDate().before(new Date())) {
-            String salt = generateSalt();
-            Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
-            User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), request.getTitle(), salt, request.isAdminApprove(), r, null, null);
-            String activationCode = jwtService.generateCodeForRegister(user);
-            user.setActivationCode(activationCode);
-            userRepository.save(user);
+        if(dr != null) {
+            if (dr.getDate().before(new Date())) {
+                String salt = generateSalt();
+                Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
+                List<Role> retListRole = new ArrayList<>();
+                for(String s : request.getTitle())
+                {
+                    if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
+                        retListRole.add(rolE);
+                    }
+                    if(RoleEnum.ROLE_HR.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_HR.ordinal() + 1);
+                        retListRole.add(rolE);
+                    }
+                    if(RoleEnum.ROLE_MANAGER.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_MANAGER.ordinal() + 1);
+                        retListRole.add(rolE);
+                    }
+                }
+                User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
+                String activationCode = jwtService.generateCodeForRegister(user);
+                user.setActivationCode(activationCode);
+                userRepository.save(user);
 
-            return user;
+                return user;
+            }
+        }
+        else
+        {
+                String salt = generateSalt();
+                Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
+            List<Role> retListRole = new ArrayList<>();
+                for(String s : request.getTitle())
+                {
+                    if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
+                        if (!retListRole.contains(rolE)) {
+                            retListRole.add(rolE);
+                        }
+                    }
+                    if(RoleEnum.ROLE_HR.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_HR.ordinal() + 1);
+                        if (!retListRole.contains(rolE)) {
+                            retListRole.add(rolE);
+                        }
+                    }
+                    if(RoleEnum.ROLE_MANAGER.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_MANAGER.ordinal() + 1);
+                        if (!retListRole.contains(rolE)) {
+                            retListRole.add(rolE);
+                        }
+                    }
+                }
+                User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
+                String activationCode = jwtService.generateCodeForRegister(user);
+                user.setActivationCode(activationCode);
+                userRepository.save(user);
+
+                return user;
+
         }
         return null;
 

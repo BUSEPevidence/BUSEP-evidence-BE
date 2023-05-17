@@ -28,8 +28,9 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
-        return ResponseEntity.ok(authenticationService.register(request));
+    public ResponseEntity<RegisterRequest> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
+        ResponseEntity.ok(authenticationService.register(request));
+        return ResponseEntity.ok(request);
     }
 
     @PostMapping("/login")
