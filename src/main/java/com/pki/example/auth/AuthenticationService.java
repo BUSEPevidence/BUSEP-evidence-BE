@@ -119,8 +119,13 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
+        System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
+
         User saltUser = userRepository.findOneByUsername(request.getUsername());
+
         User user = userRepository.findByUsernameAndPassword(request.getUsername(), hashPassword(request.getPassword(),saltUser.getSalt()));
+        System.out.println("Proso salt usera");
+        System.out.println(user.getUsername() + " " + user.getFirstname());
         var jwtToken = "";
 
         if (user != null)
@@ -143,6 +148,11 @@ public class AuthenticationService {
         user.setAdminApprove(true);
         userRepository.save(user);
         return user;
+    }
+    public List<Role> GetAllRoles(String request)
+    {
+        User user = userRepository.findOneByUsername(request);
+        return user.getRoles();
     }
     public User denie(String request) throws NoSuchAlgorithmException {
         Date currentDate = new Date();
