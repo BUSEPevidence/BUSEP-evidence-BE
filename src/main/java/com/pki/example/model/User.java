@@ -48,13 +48,17 @@ public class User implements UserDetails {
 
     private String activationCode;
 
+    private Date dateAccepted;
+
+    private Date dateDenial;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "userId", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "roleId", referencedColumnName = "id"))
     private List<Role> roles;
 
-    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, String title, String salt, boolean adminApprove,Role role) {
+    public User(String username, String password, String firstname, String lastname, String address, String city, String state, String number, String title, String salt, boolean adminApprove,Role role,Date dateAccepted,Date dateDenial) {
         this.activationCode = RandomStringUtils.randomAlphanumeric(32);
         this.username = username;
         this.password = password;
@@ -69,6 +73,8 @@ public class User implements UserDetails {
         this.roles = new ArrayList<Role>();
         this.roles.add(role);
         this.adminApprove = adminApprove;
+        this.dateAccepted = dateAccepted;
+        this.dateDenial = dateDenial;
     }
 
     @Override
