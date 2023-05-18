@@ -5,6 +5,7 @@ import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.model.Permission;
 import com.pki.example.model.PermissionEnum;
 import com.pki.example.model.RoleEnum;
+import com.pki.example.model.User;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -186,6 +187,11 @@ public class AdminController {
     @GetMapping("/get-trusted")
     public ArrayList<String> getTrusted() throws Exception {
         return adminService.getTrustedAliases();
+    }
+
+    @GetMapping("/get-requests")
+    public List<User> getRequests() throws Exception {
+        return adminService.GetAllRegisterRequests();
     }
 
     private KeyPair generateKeyPair() {

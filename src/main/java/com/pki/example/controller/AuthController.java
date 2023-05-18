@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
 
     private final AuthenticationService authenticationService;
@@ -47,6 +47,7 @@ public class AuthController {
     }
     @PostMapping("/approve")
     public ResponseEntity<String> approveRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
+        System.out.println("Stigao request  " + request);
         User retUser = authenticationService.getUser(request);
         EmailDetails emailDetails = new EmailDetails();
         emailDetails.setMsgBody("Welcome!<br/>" +
@@ -54,9 +55,9 @@ public class AuthController {
         emailDetails.setSubject("Welcome email");
         emailService.sendWelcomeMail(emailDetails);
         if(retUser != null)
-            return ResponseEntity.ok("Email sent");
+            return ResponseEntity.ok("{\"Message\": \"" + "Email sent" + "\"}");
         else
-            return ResponseEntity.ok("User not found");
+            return ResponseEntity.ok("{\"Message\": \"" + "User not found" + "\"}");
     }
 
     @PostMapping("/denie")
@@ -64,18 +65,19 @@ public class AuthController {
         User retUser = authenticationService.getUser(request);
         authenticationService.denie(request.getUsername());
         EmailDetails emailDetails = new EmailDetails();
-        emailDetails.setMsgBody("Welcome!<br/>" +
-                "You can <a href=\"http://localhost:4200/auth/login?tracking="+ retUser.getActivationCode() +"\">Activate your account here!<a/></h2> <br/>");
-        emailDetails.setSubject("Welcome email");
+        emailDetails.setMsgBody("Hello!<br/>" +
+                "Your register request is denied<br/>");
+        emailDetails.setSubject("Sorry email");
         emailService.sendWelcomeMail(emailDetails);
         if(retUser != null)
-            return ResponseEntity.ok("Email sent");
+            return ResponseEntity.ok("{\"Message\": \"" + "Email sent" + "\"}");
         else
-            return ResponseEntity.ok("User not found");
+            return ResponseEntity.ok("{\"Message\": \"" + "User not found" + "\"}");
     }
 
     @GetMapping("/visitLink")
     public void visitedLink(@RequestParam("request") String request) throws NoSuchAlgorithmException {
+        System.out.println(request);
         User retUser = null;
         String username = jwtService.extractUsername(request);
         UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
