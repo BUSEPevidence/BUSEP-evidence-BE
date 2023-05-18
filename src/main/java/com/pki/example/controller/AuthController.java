@@ -37,10 +37,12 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequest request) throws NoSuchAlgorithmException {
-        String token = authenticationService.authenticate(request).getToken();
+        AuthenticationResponse authenticationResponse = authenticationService.authenticate(request);
+        String token = authenticationResponse.getToken();
+        String refreshToken = authenticationResponse.getRefreshToken();
         System.out.println(request.getUsername() + " " + request.getPassword());
         if (!token.equals("")) {
-            return ResponseEntity.ok().body("{\"token\": \"" + token + "\"}");
+            return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
         }
