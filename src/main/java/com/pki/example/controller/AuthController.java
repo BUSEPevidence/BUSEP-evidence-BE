@@ -47,6 +47,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
         }
     }
+    
     @PostMapping("/approve")
     public ResponseEntity<String> approveRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
         System.out.println("Stigao request  " + request);

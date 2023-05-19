@@ -27,6 +27,8 @@ public class AuthenticationService {
     private final RoleRepository roleRepository;
     private final DenialRequestsRepository denialRequestsRepository;
 
+
+
     private static final int SALT_LENGTH = 16;
 
     public static String generateSalt() {
@@ -118,6 +120,15 @@ public class AuthenticationService {
 
 
     }
+
+    public String generateNewAccessToken(String refreshToken,String token) {
+        User user = userRepository.findOneByUsername(jwtService.extractUsername(token));
+        if(user.getRefreshToken().equals(refreshToken) && new Date().before(user.getRefreshTokenExpiration())) {
+            return jwtService.generateToken(user);
+        }
+        else return "";
+    }
+
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
