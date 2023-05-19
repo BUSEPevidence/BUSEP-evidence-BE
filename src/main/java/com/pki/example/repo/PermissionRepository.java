@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission,Integer> {
     Permission findOneById(int id);
+    Permission findOneByName(String name);
 }
