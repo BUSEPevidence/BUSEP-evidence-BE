@@ -51,7 +51,7 @@ public class AuthController {
         User retUser = authenticationService.getUser(request);
         EmailDetails emailDetails = new EmailDetails();
         emailDetails.setMsgBody("Welcome!<br/>" +
-                "You can <a href=\"http://localhost:4200/auth/login?tracking="+ retUser.getActivationCode() +"\">Activate your account here!<a/></h2> <br/>");
+                "You can <a href=\"http://localhost:4200/login?tracking="+ retUser.getActivationCode() +"\">Activate your account here!<a/></h2> <br/>");
         emailDetails.setSubject("Welcome email");
         emailService.sendWelcomeMail(emailDetails);
         if(retUser != null)
