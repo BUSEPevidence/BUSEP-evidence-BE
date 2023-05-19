@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -25,6 +26,8 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final RoleRepository roleRepository;
     private final DenialRequestsRepository denialRequestsRepository;
+
+
 
     private static final int SALT_LENGTH = 16;
 
@@ -118,15 +121,37 @@ public class AuthenticationService {
 
     }
 
+    public String generateNewAccessToken(String refreshToken,String token) {
+        User user = userRepository.findOneByUsername(jwtService.extractUsername(token));
+        if(user.getRefreshToken().equals(refreshToken) && new Date().before(user.getRefreshTokenExpiration())) {
+            return jwtService.generateToken(user);
+        }
+        else return "";
+    }
+
+
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
 
         User saltUser = userRepository.findOneByUsername(request.getUsername());
 
         User user = userRepository.findByUsernameAndPassword(request.getUsername(), hashPassword(request.getPassword(),saltUser.getSalt()));
+
+        Date currentDate = new Date();
+        if(user.getRefreshToken() == null || user.getRefreshTokenExpiration() == null ||
+                currentDate.compareTo(user.getRefreshTokenExpiration()) < 0) {
+            user.setRefreshToken(UUID.randomUUID().toString());
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(new Date());
+            calendar.add(Calendar.YEAR, 1);
+            user.setRefreshTokenExpiration(calendar.getTime());
+            userRepository.save(user);
+        }
+
         System.out.println("Proso salt usera");
         System.out.println(user.getUsername() + " " + user.getFirstname());
         var jwtToken = "";
+        String refreshToken = "";
 
         if (user != null)
             if(user.isAdminApprove() == true) {
@@ -135,8 +160,37 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .refreshToken(user.getRefreshToken())
                 .build();
     }
+
+    /*
+    public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
+    System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
+
+    User saltUser = userRepository.findOneByUsername(request.getUsername());
+
+    User user = userRepository.findByUsernameAndPassword(request.getUsername(), hashPassword(request.getPassword(),saltUser.getSalt()));
+    System.out.println("Proso salt usera");
+    System.out.println(user.getUsername() + " " + user.getFirstname());
+
+    String jwtToken = "";
+    String refreshToken = "";
+
+    if (user != null && user.isAdminApprove()) {
+        jwtToken = jwtService.generateToken(user);
+        refreshToken = jwtService.generateRefreshToken();
+        user.setRefreshToken(refreshToken);
+        userRepository.save(user);
+    }
+
+    return AuthenticationResponse.builder()
+            .token(jwtToken)
+            .refreshToken(refreshToken)
+            .build();
+}
+     */
+
     public User approve(String request,boolean check) throws NoSuchAlgorithmException {
         User user = userRepository.findByActivationCode(request);
         if(check)
