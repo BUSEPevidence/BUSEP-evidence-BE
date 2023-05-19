@@ -37,4 +37,11 @@ public class Permission implements GrantedAuthority {
     public void setName(String name) {
         this.name = name;
     }
+
+    public Permission(String name) {
+        this.name = name;
+    }
+
+    public Permission() {
+    }
 }
