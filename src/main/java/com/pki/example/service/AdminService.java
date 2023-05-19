@@ -645,5 +645,28 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
 
         return "Added";
     }
+    public List<User> GetAllRegisterRequests()
+    {
+         String tmp = "";
+         List<User> users = userRepository.findAll();
+         List<User> retUsers = new ArrayList<>();
+         for(User user : users)
+         {
+             if(!user.isAdminApprove()) {
+                 for (Role role : user.getRoles()) {
+                     tmp += role.getName() + ",";
+                 }
+                 tmp = tmp.substring(0, tmp.length() - 1);
+                 user.setPassword(tmp);
+                 tmp = "";
+                 retUsers.add(user);
+             }
+
+
+         }
+
+
+        return retUsers;
+    }
 
 }
