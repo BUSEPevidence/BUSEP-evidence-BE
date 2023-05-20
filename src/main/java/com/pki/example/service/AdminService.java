@@ -20,10 +20,8 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.*;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
@@ -35,7 +33,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -225,52 +222,52 @@ public class AdminService {
 
         return converter.getCertificate(certBldr.build(signer));
     }
-    public static X509Certificate createEndEntity(
-            X509Certificate signerCert, PrivateKey signerKey,
-            PublicKey certKey,CAandEECertificateDTO cAandEECertificateDTO,String certName)
-            throws CertIOException, OperatorCreationException, CertificateException
-    {
+    public static X509Certificate createEndEntity(X509Certificate signerCert, PrivateKey signerKey, PublicKey certKey, CAandEECertificateDTO cAandEECertificateDTO, String certName) throws CertIOException, OperatorCreationException, CertificateException {
 
-        if(isEndEntity(signerCert)){
-            System.out.println("You cannot create End-entity certificate because parent certificate is End-entity!");
+        if (isEndEntity(signerCert)) {
+            System.out.println("You cannot create an end-entity certificate because the parent certificate is an end-entity!");
             return null;
         }
 
-        if(isAliasUsed(certName)){
-            System.out.println("Alias is used choose another!");
+        if (isAliasUsed(certName)) {
+            System.out.println("Alias is already used. Please choose another!");
             return null;
         }
+
         X500Principal subject = new X500Principal("CN=" + cAandEECertificateDTO.subjectName + "," + "O=" + cAandEECertificateDTO.organization + ","
                 + "OU=" + cAandEECertificateDTO.orgainzationUnit + "," + "C=" + cAandEECertificateDTO.country);
-
 
         Calendar calendar = Calendar.getInstance();
         Date currentDate = new Date();
         calendar.setTime(currentDate);
-        calendar.add(Calendar.YEAR,cAandEECertificateDTO.yearsOfValidity);
-        Date dateOfExpirement = calendar.getTime();
+        calendar.add(Calendar.YEAR, cAandEECertificateDTO.yearsOfValidity);
+        Date dateOfExpiration = calendar.getTime();
 
-        X509v3CertificateBuilder  certBldr = new JcaX509v3CertificateBuilder(
+        X509v3CertificateBuilder certBldr = new JcaX509v3CertificateBuilder(
                 signerCert.getSubjectX500Principal(),
                 calculateSerialNumber(),
                 new Date(),
-                dateOfExpirement,
+                dateOfExpiration,
                 subject,
                 certKey);
 
+        // Add Basic Constraints extension
+        certBldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
 
-        certBldr.addExtension(org.bouncycastle.asn1.x509.Extension.basicConstraints,
-                        true, new BasicConstraints(false))
-                .addExtension(org.bouncycastle.asn1.x509.Extension.keyUsage,
-                        true, new KeyUsage(KeyUsage.digitalSignature));
+        // Add Key Usage extension for SSL/TLS
+        certBldr.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
 
+        // Add Extended Key Usage extension for SSL/TLS server authentication
+        KeyPurposeId[] keyPurposeIds = { KeyPurposeId.id_kp_serverAuth };
+        certBldr.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(keyPurposeIds));
 
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
-                .setProvider("BC").build(signerKey);
+        // Add Subject Alternative Name (SAN) extension
+        GeneralName[] sanNames = { new GeneralName(GeneralName.dNSName, "localhost") };
+        GeneralNames san = new GeneralNames(sanNames);
+        certBldr.addExtension(Extension.subjectAlternativeName, false, san);
 
-
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider("BC").build(signerKey);
         JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
-
 
         return converter.getCertificate(certBldr.build(signer));
     }
@@ -279,7 +276,7 @@ public class AdminService {
             X509Certificate signerCert, PrivateKey signerKey,
             PublicKey certKey, int followingCACerts, CAandEECertificateDTO cAandEECertificateDTO,String certName)
             throws GeneralSecurityException,
-            OperatorCreationException, CertIOException
+            OperatorCreationException, IOException
     {
 
         if(isEndEntity(signerCert) ){
@@ -311,12 +308,17 @@ public class AdminService {
 
         JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
+        GeneralNames subjectAltNames = new GeneralNames(new GeneralName(GeneralName.dNSName, "localhost"));
+        Extension sanExtension = new Extension(Extension.subjectAlternativeName, true, subjectAltNames.getEncoded());
 
         certBldr.addExtension(org.bouncycastle.asn1.x509.Extension.basicConstraints,
                         true, new BasicConstraints(followingCACerts))
                 .addExtension(org.bouncycastle.asn1.x509.Extension.keyUsage,
                         true, new KeyUsage(KeyUsage.keyCertSign
-                                | KeyUsage.cRLSign));
+                                | KeyUsage.cRLSign
+                                | KeyUsage.keyEncipherment
+                                | KeyUsage.digitalSignature))
+                .addExtension(sanExtension);
 
 
         ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
@@ -594,8 +596,10 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
                     }
                 }
                 if (issuer.equals(subject)){
+                    System.out.println(alias);
                     String isValid = checkValidationOfSign("example","password",alias);
-                    if(isValid.equals("Certificate is valid.")){
+                    if(alias.equals("mycert")) aliases.add(alias);
+                    if(!alias.equals("mycert") && isValid.equals("Certificate is valid.") ){
                         aliases.add(alias);
                     }
                 }
