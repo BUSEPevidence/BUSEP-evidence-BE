@@ -6,18 +6,24 @@ import com.pki.example.model.*;
 import com.pki.example.repo.DenialRequestsRepository;
 import com.pki.example.repo.MagicLinkRepository;
 import com.pki.example.repo.RoleRepository;
+import com.pki.example.dto.UpdateEngineerDTO;
+import com.pki.example.dto.UpdateUserDTO;
+import com.pki.example.repo.AdminRepository;
 import com.pki.example.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+
 import java.time.LocalDate;
 import java.util.*;
+import java.util.Base64;
+import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +36,8 @@ public class AuthenticationService {
     private final RoleRepository roleRepository;
     private final DenialRequestsRepository denialRequestsRepository;
     private final IEmailService emailService;
-
     private final MagicLinkRepository magicLinkRepository;
+    private final AdminRepository adminRepository;
 
 
 
@@ -301,4 +307,46 @@ public class AuthenticationService {
 
         return user;
     }
+
+    public void updateEngineer(UpdateEngineerDTO informations) throws NoSuchAlgorithmException {
+        User user = userRepository.findOneByUsername(informations.username);
+        String salt = generateSalt();
+        user.setPassword(hashPassword(informations.password, salt));
+        user.setFirstname(informations.firstname);
+        user.setLastname(informations.lastname);
+        user.setAddress(informations.address);
+        user.setNumber(informations.number);
+        user.setCity(informations.city);
+        user.setState(informations.state);
+        user.setSalt(salt);
+        userRepository.save(user);
+    }
+
+    public void updateUser(UpdateUserDTO informations) throws NoSuchAlgorithmException {
+        Optional<User> user = userRepository.findById(informations.id);
+        String salt = generateSalt();
+        user.get().setUsername(informations.username);
+        user.get().setPassword(hashPassword(informations.password, salt));
+        user.get().setFirstname(informations.firstname);
+        user.get().setLastname(informations.lastname);
+        user.get().setAddress(informations.address);
+        user.get().setNumber(informations.number);
+        user.get().setCity(informations.city);
+        user.get().setState(informations.state);
+        user.get().setSalt(salt);
+        userRepository.save(user.get());
+    }
+
+    public void changePassword(User user, String newpassword) throws NoSuchAlgorithmException {
+        String salt = generateSalt();
+        user.setPassword(hashPassword(newpassword, salt));
+        user.setSalt(salt);
+        if(user.getRoles().contains(RoleEnum.ROLE_ADMIN)){
+           AdminLogins adminLogins = adminRepository.getAdminLoginsByUser(user);
+           adminLogins.setChangedPassword(true);
+           adminRepository.save(adminLogins);
+        }
+        userRepository.save(user);
+    }
+
 }
