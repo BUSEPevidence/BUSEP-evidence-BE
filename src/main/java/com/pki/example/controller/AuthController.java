@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,6 +44,20 @@ public class AuthController {
         System.out.println(request.getUsername() + " " + request.getPassword());
         if (!token.equals("")) {
             return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
+        }
+    }
+
+    @PostMapping("/passwordless")
+    public ResponseEntity<String> passwordlessLogin(@RequestBody Map<String, String> requestBody) throws NoSuchAlgorithmException {
+        String username = requestBody.get("username");
+        System.out.println("EMAIL U CONTROLLERU:" + username);
+        String token = authenticationService.generatePasswordlessAccessToken(username);
+        System.out.println("TOKEN U CONTROLLERU: " + token);
+
+        if (!token.equals("")) {
+            return ResponseEntity.ok().body("{\"token\": \"" + token);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
         }

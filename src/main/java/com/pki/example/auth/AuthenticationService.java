@@ -1,5 +1,7 @@
 package com.pki.example.auth;
 
+import com.pki.example.email.model.EmailDetails;
+import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.DenialRequestsRepository;
 import com.pki.example.repo.RoleRepository;
@@ -26,6 +28,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final RoleRepository roleRepository;
     private final DenialRequestsRepository denialRequestsRepository;
+    private final IEmailService emailService;
 
 
 
@@ -127,6 +130,19 @@ public class AuthenticationService {
             return jwtService.generateToken(user);
         }
         else return "";
+    }
+
+    public String generatePasswordlessAccessToken(String email) {
+        User user = userRepository.findOneByUsername(email);
+        String token = jwtService.generateToken(user);
+        String magicLink = "https://localhost:4200/magic-login?token=" + token;
+        System.out.println("!*!*!*!*!*!*!*MAGIC LINK: " + magicLink);
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setMsgBody("Welcome!<br/>" +
+                "You can <a href=\""+ magicLink +"\">log in using this link!<a/></h2> <br/>");
+        emailDetails.setSubject("Magic login");
+        emailService.sendWelcomeMail(emailDetails);
+        return magicLink;
     }
 
 
