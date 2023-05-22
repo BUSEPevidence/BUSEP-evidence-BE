@@ -28,7 +28,7 @@ public class PermissionController {
     {
         Permission permission = new Permission(permissionDTO.getName());
         permissionService.createPermission(permission);
-        return ResponseEntity.ok("Hello man with valid token");
+        return ResponseEntity.ok("{\"Message\": \"" + "Permission created" + "\"}");
     }
     @GetMapping("/getAll")
     public List<PermissionDTO> getAllPermissions()

@@ -14,4 +14,8 @@ public class PermissionDTO {
     public PermissionDTO(String name) {
         this.name = name;
     }
+    public PermissionDTO() {
+
+    }
+
 }
