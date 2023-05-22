@@ -134,8 +134,8 @@ public class AuthenticationService {
 
     public String generatePasswordlessAccessToken(String email) {
         User user = userRepository.findOneByUsername(email);
-        String token = jwtService.generateToken(user);
-        String magicLink = "https://localhost:4200/magic-login?token=" + token;
+        String token = jwtService.generate10MinuteToken(user);
+        String magicLink = "https://localhost:4200/magic-link?token=" + token;
         System.out.println("!*!*!*!*!*!*!*MAGIC LINK: " + magicLink);
         EmailDetails emailDetails = new EmailDetails();
         emailDetails.setMsgBody("Welcome!<br/>" +
@@ -172,6 +172,29 @@ public class AuthenticationService {
         if (user != null)
             if(user.isAdminApprove() == true) {
                 jwtToken = jwtService.generateToken(user);
+        }
+
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .refreshToken(user.getRefreshToken())
+                .build();
+    }
+
+    public AuthenticationResponse generateNewTokenPair(User user) {
+        var jwtToken = "";
+        if (user != null)
+            if(user.isAdminApprove() == true) {
+                jwtToken = jwtService.generateToken(user);
+            }
+        Date currentDate = new Date();
+        if(user.getRefreshToken() == null || user.getRefreshTokenExpiration() == null ||
+                currentDate.compareTo(user.getRefreshTokenExpiration()) < 0) {
+            user.setRefreshToken(UUID.randomUUID().toString());
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(new Date());
+            calendar.add(Calendar.YEAR, 1);
+            user.setRefreshTokenExpiration(calendar.getTime());
+            userRepository.save(user);
         }
 
         return AuthenticationResponse.builder()

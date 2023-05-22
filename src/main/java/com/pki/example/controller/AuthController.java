@@ -49,17 +49,33 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/passwordless")
-    public ResponseEntity<String> passwordlessLogin(@RequestBody Map<String, String> requestBody) throws NoSuchAlgorithmException {
-        String username = requestBody.get("username");
-        System.out.println("EMAIL U CONTROLLERU:" + username);
-        String token = authenticationService.generatePasswordlessAccessToken(username);
-        System.out.println("TOKEN U CONTROLLERU: " + token);
+    @GetMapping("/magic-link")
+    public ResponseEntity<String> magicLink(@RequestParam("token") String request) throws NoSuchAlgorithmException {
+        System.out.println("Token u kontroleru: " + request);
+        String username = jwtService.extractUsername(request);
+        System.out.println("Extracted username: " + username);
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        boolean validation = jwtService.isTokenValid(request, userDetails);
+        User user = authenticationService.getUserByCode(username);
+        if (!validation) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"Token no longer valid\"}");
+        }
+        AuthenticationResponse authenticationResponse = authenticationService.generateNewTokenPair(user);
+        String token = authenticationResponse.getToken();
+        String refreshToken = authenticationResponse.getRefreshToken();
+        return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
+    }
 
+    @PostMapping("/passwordless")
+    public ResponseEntity<Void> passwordlessLogin(@RequestBody Map<String, String> requestBody) throws NoSuchAlgorithmException {
+        String username = requestBody.get("username");
+        System.out.println("Trazim za username: " + username);
+        String token = authenticationService.generatePasswordlessAccessToken(username);
+        System.out.println("MAGICNI LINK: " + token);
         if (!token.equals("")) {
-            return ResponseEntity.ok().body("{\"token\": \"" + token);
+            return ResponseEntity.ok().build();
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
     
@@ -115,6 +131,10 @@ public class AuthController {
                 retUser = authenticationService.approve(request,check);
         }
     }
+
+
+
+
     @GetMapping("/getRoles")
     public ResponseEntity<String> getRoles(@RequestParam("request") String request) throws NoSuchAlgorithmException {
         String retString = "";
