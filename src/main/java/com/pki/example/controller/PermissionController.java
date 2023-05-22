@@ -9,6 +9,7 @@ import com.pki.example.service.PermissionService;
 import com.pki.example.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -24,11 +25,12 @@ public class PermissionController {
 
 
     @PostMapping("/addPermission")
+    @PreAuthorize("hasAuthority('CREATE_PERMISSION')")
     public ResponseEntity<String> addPermission(@RequestBody PermissionDTO permissionDTO)
     {
         Permission permission = new Permission(permissionDTO.getName());
         permissionService.createPermission(permission);
-        return ResponseEntity.ok("Hello man with valid token");
+        return ResponseEntity.ok("{\"Message\": \"" + "Permission created" + "\"}");
     }
     @GetMapping("/getAll")
     public List<PermissionDTO> getAllPermissions()
