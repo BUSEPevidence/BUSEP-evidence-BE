@@ -29,11 +29,18 @@ public class RoleController {
     @PostMapping("/addPermission")
     public ResponseEntity<String> addPermissionToRole(@RequestBody RolePermissionDTO rolePermissionDTO)
     {
+        System.out.println(rolePermissionDTO.getRole() + " " + rolePermissionDTO.getPermission());
         Role role = roleService.findRoleByName(rolePermissionDTO.getRole());
         Permission permission = permissionService.findPermissionByName(rolePermissionDTO.getPermission());
+        System.out.println("rola je: " + role.getName() + " " + role.getId());
+        System.out.println("permisija je: " + permission.getName() + " " + permission.getId());
         List<Permission> roles = role.getPermissions();
         roles.add(permission);
         role.setPermissions(roles);
+        for(Permission perm : role.getPermissions())
+        {
+            System.out.println(perm.getName() + " eo perma");
+        }
         roleService.save(role);
 
         return ResponseEntity.ok("{\"Answer\": \"" + "Added" + "\"}");
