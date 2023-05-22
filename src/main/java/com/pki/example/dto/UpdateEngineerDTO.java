@@ -1,7 +1,6 @@
 package com.pki.example.dto;
 
 public class UpdateEngineerDTO {
-    public String username;
     public String password;
     public String firstname;
     public String lastname;

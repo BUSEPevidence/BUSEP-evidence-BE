@@ -1,6 +1,7 @@
 package com.pki.example.service;
 
 import com.pki.example.dto.EngineerInfoDTO;
+import com.pki.example.dto.ExperienceDTO;
 import com.pki.example.model.*;
 import com.pki.example.repo.EngineersDetsRepository;
 import com.pki.example.repo.ExperienceRepository;
@@ -33,8 +34,15 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public void addExperience(Experience experience){
-        experienceRepository.save(experience);
+    public void addExperience(User user, ExperienceDTO experience){
+        List<Experience> experiences = experienceRepository.findAllByUser(user);
+        Experience expWork = new Experience(user, experience.title, experience.grade);
+        for (Experience exp : experiences) {
+            if(exp.getTitle().toLowerCase().matches(expWork.getTitle().toLowerCase())){
+                expWork = exp;
+            }
+        }
+        experienceRepository.save(expWork);
     }
 
     public List<User> getWorkersNotOnProject(Project project){
@@ -65,6 +73,7 @@ public class UserService {
 
     public void uploadCv(User user, String url){
        EngineerDetails engdet = engineersDetsRepository.findDistinctByUser(user);
+       engdet.setCvUrl(url);
        engineersDetsRepository.save(engdet);
     }
 

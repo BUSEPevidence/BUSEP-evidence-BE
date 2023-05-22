@@ -1,5 +1,6 @@
 package com.pki.example.service;
 
+import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.ProjectDTO;
 import com.pki.example.dto.UpdateProjectDTO;
 import com.pki.example.model.Project;
@@ -7,25 +8,21 @@ import com.pki.example.model.User;
 import com.pki.example.model.WorkingOnProject;
 import com.pki.example.repo.ProjectRepository;
 import com.pki.example.repo.WorkOnProjectRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
+@RequiredArgsConstructor
 @Service
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final WorkOnProjectRepository workOnProjectRepository;
+    private final AuthenticationService authService;
 
-    @Autowired
-    public ProjectService(ProjectRepository projectRepository, WorkOnProjectRepository workOnProjectRepository) {
-        this.projectRepository = projectRepository;
-        this.workOnProjectRepository = workOnProjectRepository;
-    }
 
     public void createProject(ProjectDTO request) {
         Project project = new Project(request.title,request.description,request.startTime,request.endTime);
@@ -34,10 +31,13 @@ public class ProjectService {
 
     public void updateProject(UpdateProjectDTO request) {
         Optional<Project> project = projectRepository.findById(request.id);
-        project.get().setTitle(request.title);
-        project.get().setDescription(request.description);
-        project.get().setStartTime(request.startTime);
-        project.get().setEndTime(request.endTime);
+        if(project.isPresent()){
+            project.get().setTitle(request.title);
+            project.get().setDescription(request.description);
+            project.get().setStartTime(request.startTime);
+            project.get().setEndTime(request.endTime);
+        }
+        throw new Error("Project not found");
     }
 
     public void addWorkerToProject(User worker, Project project, String description){
@@ -104,7 +104,8 @@ public class ProjectService {
         workOnProjectRepository.save(workproject);
     }
 
-    public void changeDescriptionOnProjectWork(User user, Project project, String description){
+    public void changeDescriptionOnProjectWork(Project project, String description){
+        User user = authService.getCurrentUser();
         WorkingOnProject workproject = workOnProjectRepository.getByUserAndProject(user,project);
         Date date = new Date();
         java.sql.Date now = new java.sql.Date(date.getTime());

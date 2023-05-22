@@ -21,4 +21,10 @@ public class Experience {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public Experience(User user, String title, int grade){
+        this.user = user;
+        this.title = title;
+        this.grade = grade;
+    }
 }

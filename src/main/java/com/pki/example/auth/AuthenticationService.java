@@ -1,5 +1,6 @@
 package com.pki.example.auth;
 
+
 import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
@@ -8,21 +9,23 @@ import com.pki.example.repo.MagicLinkRepository;
 import com.pki.example.repo.RoleRepository;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
+import com.pki.example.model.*;
 import com.pki.example.repo.AdminRepository;
+import com.pki.example.repo.DenialRequestsRepository;
+import com.pki.example.repo.RoleRepository;
 import com.pki.example.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-
-import java.time.LocalDate;
 import java.util.*;
-import java.util.Base64;
-import java.util.Optional;
 
 
 @Service
@@ -309,7 +312,7 @@ public class AuthenticationService {
     }
 
     public void updateEngineer(UpdateEngineerDTO informations) throws NoSuchAlgorithmException {
-        User user = userRepository.findOneByUsername(informations.username);
+        User user = getCurrentUser();
         String salt = generateSalt();
         user.setPassword(hashPassword(informations.password, salt));
         user.setFirstname(informations.firstname);
@@ -323,18 +326,20 @@ public class AuthenticationService {
     }
 
     public void updateUser(UpdateUserDTO informations) throws NoSuchAlgorithmException {
-        Optional<User> user = userRepository.findById(informations.id);
+        User user = getCurrentUser();
         String salt = generateSalt();
-        user.get().setUsername(informations.username);
-        user.get().setPassword(hashPassword(informations.password, salt));
-        user.get().setFirstname(informations.firstname);
-        user.get().setLastname(informations.lastname);
-        user.get().setAddress(informations.address);
-        user.get().setNumber(informations.number);
-        user.get().setCity(informations.city);
-        user.get().setState(informations.state);
-        user.get().setSalt(salt);
-        userRepository.save(user.get());
+        if(!userRepository.existsByUsername(informations.username)){user.setUsername(informations.username);
+            user.setPassword(hashPassword(informations.password, salt));
+            user.setFirstname(informations.firstname);
+            user.setLastname(informations.lastname);
+            user.setAddress(informations.address);
+            user.setNumber(informations.number);
+            user.setCity(informations.city);
+            user.setState(informations.state);
+            user.setSalt(salt);
+            userRepository.save(user);
+        }
+        throw new Error("Username already exists");
     }
 
     public void changePassword(User user, String newpassword) throws NoSuchAlgorithmException {
@@ -349,4 +354,18 @@ public class AuthenticationService {
         userRepository.save(user);
     }
 
+
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof UserDetails) {
+                String username = ((UserDetails) principal).getUsername();
+                return userRepository.findOneByUsername(username);
+            }
+        }
+
+        return null;
+    }
 }
