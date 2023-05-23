@@ -1,7 +1,10 @@
 package com.pki.example.auth;
 
+import com.pki.example.email.model.EmailDetails;
+import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.DenialRequestsRepository;
+import com.pki.example.repo.MagicLinkRepository;
 import com.pki.example.repo.RoleRepository;
 import com.pki.example.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,9 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final RoleRepository roleRepository;
     private final DenialRequestsRepository denialRequestsRepository;
+    private final IEmailService emailService;
+
+    private final MagicLinkRepository magicLinkRepository;
 
 
 
@@ -129,6 +135,48 @@ public class AuthenticationService {
         else return "";
     }
 
+    public String generatePasswordlessAccessToken(String email) {
+        User user = userRepository.findOneByUsername(email);
+        String token = jwtService.generate10MinuteToken(user);
+        MagicLink mLink = new MagicLink();
+        mLink.setUsed(false);
+        mLink.setUsername(email);
+
+        Random random = new Random();
+        long randomId = random.nextLong();
+
+        mLink.setLinkId(randomId);
+
+        String magicLink = "https://localhost:4200/magic-link?token=" + token + "&id=" + mLink.getLinkId();
+        System.out.println("!*!*!*!*!*!*!*MAGIC LINK: " + magicLink);
+
+        mLink.setLink(magicLink);
+        magicLinkRepository.save(mLink);
+
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setMsgBody("Welcome!<br/>" +
+                "You can <a href=\""+ magicLink +"\">log in using this link!<a/></h2> <br/>");
+        emailDetails.setSubject("Magic login");
+        emailDetails.setRecipient(email);
+        emailService.sendWelcomeMail(emailDetails);
+        return magicLink;
+    }
+
+    public boolean isMagicLinkValid(long id) {
+        System.out.println("U servisu trazim magicni link sa id: " + id);
+        MagicLink magicLink = magicLinkRepository.findOneByLinkId(id);
+        if (magicLink.isUsed()) {
+            return false;
+        }
+        else return true;
+    }
+
+    public void useMagicLink(long id) {
+        MagicLink magicLink = magicLinkRepository.findOneByLinkId(id);
+        magicLink.setUsed(true);
+        magicLinkRepository.save(magicLink);
+    }
+
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
@@ -156,6 +204,29 @@ public class AuthenticationService {
         if (user != null)
             if(user.isAdminApprove() == true) {
                 jwtToken = jwtService.generateToken(user);
+        }
+
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .refreshToken(user.getRefreshToken())
+                .build();
+    }
+
+    public AuthenticationResponse generateNewTokenPair(User user) {
+        var jwtToken = "";
+        if (user != null)
+            if(user.isAdminApprove() == true) {
+                jwtToken = jwtService.generateToken(user);
+            }
+        Date currentDate = new Date();
+        if(user.getRefreshToken() == null || user.getRefreshTokenExpiration() == null ||
+                currentDate.compareTo(user.getRefreshTokenExpiration()) < 0) {
+            user.setRefreshToken(UUID.randomUUID().toString());
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(new Date());
+            calendar.add(Calendar.YEAR, 1);
+            user.setRefreshTokenExpiration(calendar.getTime());
+            userRepository.save(user);
         }
 
         return AuthenticationResponse.builder()

@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -47,6 +48,38 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
         }
     }
+
+    @GetMapping("/magic-link")
+    public ResponseEntity<String> magicLink(@RequestParam("token") String request, @RequestParam("id") long magicId) throws NoSuchAlgorithmException {
+        String username = jwtService.extractUsername(request);
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        boolean validation = jwtService.isTokenValid(request, userDetails);
+        boolean magicValidation = authenticationService.isMagicLinkValid(magicId);
+        System.out.println("KONTROLER MAGIC VALIDATION: " + magicValidation);
+
+        User user = authenticationService.getUserByCode(username);
+        if (!validation || !magicValidation) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"Token no longer valid\"}");
+        }
+        authenticationService.useMagicLink(magicId);
+        AuthenticationResponse authenticationResponse = authenticationService.generateNewTokenPair(user);
+        String token = authenticationResponse.getToken();
+        String refreshToken = authenticationResponse.getRefreshToken();
+        return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
+    }
+
+    @PostMapping("/passwordless")
+    public ResponseEntity<Void> passwordlessLogin(@RequestBody Map<String, String> requestBody) throws NoSuchAlgorithmException {
+        String username = requestBody.get("username");
+        System.out.println("Trazim za username: " + username);
+        String token = authenticationService.generatePasswordlessAccessToken(username);
+        System.out.println("MAGICNI LINK: " + token);
+        if (!token.equals("")) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
     
     @PostMapping("/approve")
     public ResponseEntity<String> approveRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
@@ -56,6 +89,7 @@ public class AuthController {
         emailDetails.setMsgBody("Welcome!<br/>" +
                 "You can <a href=\"http://localhost:4200/login?tracking="+ retUser.getActivationCode() +"\">Activate your account here!<a/></h2> <br/>");
         emailDetails.setSubject("Welcome email");
+        emailDetails.setRecipient(retUser.getUsername());
         emailService.sendWelcomeMail(emailDetails);
         if(retUser != null)
             return ResponseEntity.ok("{\"Message\": \"" + "Email sent" + "\"}");
@@ -100,6 +134,10 @@ public class AuthController {
                 retUser = authenticationService.approve(request,check);
         }
     }
+
+
+
+
     @GetMapping("/getRoles")
     public ResponseEntity<String> getRoles(@RequestParam("request") String request) throws NoSuchAlgorithmException {
         String retString = "";
