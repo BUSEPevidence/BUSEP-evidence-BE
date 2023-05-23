@@ -50,16 +50,18 @@ public class AuthController {
     }
 
     @GetMapping("/magic-link")
-    public ResponseEntity<String> magicLink(@RequestParam("token") String request) throws NoSuchAlgorithmException {
-        System.out.println("Token u kontroleru: " + request);
+    public ResponseEntity<String> magicLink(@RequestParam("token") String request, @RequestParam("id") long magicId) throws NoSuchAlgorithmException {
         String username = jwtService.extractUsername(request);
-        System.out.println("Extracted username: " + username);
         UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
         boolean validation = jwtService.isTokenValid(request, userDetails);
+        boolean magicValidation = authenticationService.isMagicLinkValid(magicId);
+        System.out.println("KONTROLER MAGIC VALIDATION: " + magicValidation);
+
         User user = authenticationService.getUserByCode(username);
-        if (!validation) {
+        if (!validation || !magicValidation) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"Token no longer valid\"}");
         }
+        authenticationService.useMagicLink(magicId);
         AuthenticationResponse authenticationResponse = authenticationService.generateNewTokenPair(user);
         String token = authenticationResponse.getToken();
         String refreshToken = authenticationResponse.getRefreshToken();
@@ -87,6 +89,7 @@ public class AuthController {
         emailDetails.setMsgBody("Welcome!<br/>" +
                 "You can <a href=\"http://localhost:4200/login?tracking="+ retUser.getActivationCode() +"\">Activate your account here!<a/></h2> <br/>");
         emailDetails.setSubject("Welcome email");
+        emailDetails.setRecipient(retUser.getUsername());
         emailService.sendWelcomeMail(emailDetails);
         if(retUser != null)
             return ResponseEntity.ok("{\"Message\": \"" + "Email sent" + "\"}");
