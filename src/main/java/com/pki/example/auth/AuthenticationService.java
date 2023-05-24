@@ -72,8 +72,8 @@ public class AuthenticationService {
                     if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
-                        EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
-                        detsRepository.save(engDet);
+//                        EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
+//                        detsRepository.save(engDet);
                         retListRole.add(rolE);
                     }
                     if(RoleEnum.ROLE_HR.toString().equals(s))
@@ -89,8 +89,8 @@ public class AuthenticationService {
                     if(RoleEnum.ROLE_ADMIN.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_MANAGER.ordinal() + 1);
-                        AdminLogins admin = new AdminLogins(user, false);
-                        adminRepository.save(admin);
+//                        AdminLogins admin = new AdminLogins(user, false);
+//                        adminRepository.save(admin);
                         retListRole.add(rolE);
                     }
                 }
@@ -113,8 +113,8 @@ public class AuthenticationService {
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
                         if (!retListRole.contains(rolE)) {
-                            EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
-                            detsRepository.save(engDet);
+//                            EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
+//                            detsRepository.save(engDet);
                             retListRole.add(rolE);
                         }
                     }
@@ -136,8 +136,8 @@ public class AuthenticationService {
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ADMIN.ordinal() + 1);
                         if (!retListRole.contains(rolE)) {
-                            AdminLogins admin = new AdminLogins(user, false);
-                            adminRepository.save(admin);
+//                            AdminLogins admin = new AdminLogins(user, false);
+//                            adminRepository.save(admin);
                             retListRole.add(rolE);
                         }
                     }
