@@ -1,6 +1,5 @@
 package com.pki.example.dto;
 
-import com.pki.example.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
@@ -23,5 +22,5 @@ public class ShowUserDTO {
 
     public String number;
 
-    public List<Role> roles;
+    public List<String> roles;
 }

@@ -87,9 +87,13 @@ public class UserService {
             ShowExperienceDTO experienceDTO = new ShowExperienceDTO(ex.getId(),ex.getTitle(),ex.getGrade());
             experiences.add(experienceDTO);
         }
+        List<String> roles = new ArrayList<>();
+        for(Role role : user.getRoles()){
+            roles.add(role.getName());
+        }
         ShowUserDTO userDTO = new ShowUserDTO(user.getUsername(),user.getFirstname(),
                 user.getLastname(), user.getAddress(),user.getCity(), user.getState(),
-                user.getNumber(), user.getRoles());
+                user.getNumber(), roles);
         ShowEngineerDTO engineer = new ShowEngineerDTO(userDTO,experiences,details);
         return engineer;
     }

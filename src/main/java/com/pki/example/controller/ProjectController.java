@@ -3,6 +3,7 @@ package com.pki.example.controller;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
 import com.pki.example.model.Project;
+import com.pki.example.model.Role;
 import com.pki.example.model.User;
 import com.pki.example.model.WorkingOnProject;
 import com.pki.example.repo.ProjectRepository;
@@ -31,20 +32,20 @@ public class ProjectController {
     private final ProjectRepository projectRepository;
 
     @PreAuthorize("hasAuthority('ALL_PROJECTS')")
-    @GetMapping("/projects")
+    @GetMapping("")
     public ResponseEntity<List<Project>> getAll() {
         List<Project> projects = projectService.getAll();
         return ResponseEntity.ok(projects);
     }
 
     @PreAuthorize("hasAuthority('CREATE_PROJECT')")
-    @PostMapping("/projects")
+    @PostMapping("")
     public ResponseEntity<String> createProject(@RequestBody ProjectDTO dto) {
         projectService.createProject(dto);
         return ResponseEntity.ok("Succesfully created project");
     }
 
-    @PreAuthorize("hasAuthority('WORKER_PROJECTS_NOTLOGED')")
+    @PreAuthorize("hasAuthority('WORKER_PROJECTS_MANAGED')")
     @GetMapping("/workers/projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkerProjects(@RequestParam
                            @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Has to be in the form of an email")
@@ -54,8 +55,8 @@ public class ProjectController {
         return getListToShow(projects);
     }
 
-    @PreAuthorize("hasAuthority('PROJECT')")
-    @GetMapping("/project")
+    @PreAuthorize("hasAuthority('PROJECT_DETAILS')")
+    @GetMapping("/details")
     public Object getProject(@RequestParam int id) {
         Optional<Project> project = projectRepository.findById(id);
         if(project.isEmpty()){
@@ -65,7 +66,7 @@ public class ProjectController {
     }
 
     @PreAuthorize("hasAuthority('PROJECT_ACTIVE_WORKERS')")
-    @GetMapping("/project/active-workers")
+    @GetMapping("/active-workers")
     public ResponseEntity<List<ShowUserDTO>> getProjectActiveWorkers(@RequestParam int projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
@@ -74,16 +75,20 @@ public class ProjectController {
         List<User> activeWorkers = projectService.getAllActiveProjectWorkers(project.get());
         List<ShowUserDTO> workersRet = new ArrayList<>();
         for(User worker : activeWorkers){
+            List<String> roles = new ArrayList<>();
+            for(Role role : worker.getRoles()){
+                roles.add(role.getName());
+            }
             ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
                     worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
-                    worker.getNumber(), worker.getRoles());
+                    worker.getNumber(), roles);
             workersRet.add(user);
         }
         return ResponseEntity.ok(workersRet);
     }
 
     @PreAuthorize("hasAuthority('PROJECT_NON_WORKERS')")
-    @GetMapping("/project/non-workers")
+    @GetMapping("/non-workers")
     public ResponseEntity<List<ShowUserDTO>> getProjectNonWorkers(@RequestParam int projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
@@ -92,24 +97,28 @@ public class ProjectController {
         List<User> nonActiveWorkers = userService.getWorkersNotOnProject(project.get());
         List<ShowUserDTO> workersRet = new ArrayList<>();
         for(User worker : nonActiveWorkers){
+            List<String> roles = new ArrayList<>();
+            for(Role role : worker.getRoles()){
+                roles.add(role.getName());
+            }
             ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
                     worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
-                    worker.getNumber(), worker.getRoles());
+                    worker.getNumber(), roles);
             workersRet.add(user);
         }
         return ResponseEntity.ok(workersRet);
     }
 
     @PreAuthorize("hasAuthority('PROJECT_UPDATE')")
-    @PutMapping ("/project")
+    @PutMapping ("")
     public ResponseEntity<String> updateProject(@RequestBody UpdateProjectDTO updateProjectDTO) {
         projectService.updateProject(updateProjectDTO);
         return ResponseEntity.ok("Succesfully updated project");
     }
 
-    @PreAuthorize("hasAuthority('PROJECT_UPDATE_MENAGED')")
-    @PutMapping ("/project/managed")
-    public ResponseEntity<String> updateProjectMenager(@RequestBody UpdateProjectDTO updateProjectDTO) {
+    @PreAuthorize("hasAuthority('PROJECT_UPDATE_MANAGED')")
+    @PutMapping ("/managed-update")
+    public ResponseEntity<String> updateProjectManager(@RequestBody UpdateProjectDTO updateProjectDTO) {
         User user = authService.getCurrentUser();
         Optional<Project> project = projectRepository.findById(updateProjectDTO.projectId);
         if(userService.isActiveWorker(user, project.get())){
@@ -132,7 +141,7 @@ public class ProjectController {
     }
 
     @PreAuthorize("hasAuthority('PROJECT_REMOVE_WORKER')")
-    @PutMapping("/project/remove-worker")
+    @PutMapping("/remove-worker")
     public ResponseEntity<String> removeWorkerFromProject(@RequestBody RemoveWorkerDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
         User user = userRepository.findOneByUsername(dto.username);
@@ -144,7 +153,7 @@ public class ProjectController {
     }
 
     @PreAuthorize("hasAuthority('PROJECT_WORKER_TASK')")
-    @PutMapping("/project/update-work")
+    @PutMapping("/update-work")
     public ResponseEntity<String> editWorkersTaskOnProject(@RequestBody UpdateWorkerTaskDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
         if(project.isEmpty()){
@@ -156,7 +165,7 @@ public class ProjectController {
 
 
     @PreAuthorize("hasAuthority('WORKERS_PROJECTS')")
-    @GetMapping("/project/past-projects")
+    @GetMapping("/past-projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkersProjects() {
         User user = authService.getCurrentUser();
         List<WorkingOnProject> projects = projectService.getAllUserProjects(user);
@@ -164,7 +173,7 @@ public class ProjectController {
     }
 
     @PreAuthorize("hasAuthority('WORKERS_PROJECTS_ACTIVE')")
-    @GetMapping("/project/active-projects")
+    @GetMapping("/active-projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkersActiveProjects() {
         User user = authService.getCurrentUser();
         List<WorkingOnProject> projects = projectService.getAllActiveUserProjects(user);
@@ -183,7 +192,7 @@ public class ProjectController {
     }
 
     @PreAuthorize("hasAuthority('PROJECT_EXPERIENCE')")
-    @PutMapping("/project/experience")
+    @PutMapping("/experience")
     public ResponseEntity<String> updateProjectExperience(@RequestBody UpdateWorkerTaskDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
         if(project.isEmpty()){
@@ -195,7 +204,7 @@ public class ProjectController {
     }
 
     @PreAuthorize("hasAuthority('PROJECT_WORKERS')")
-    @GetMapping("/project/workers")
+    @GetMapping("/workers")
     public ResponseEntity<List<ShowUserDTO>> projectWorkers(@RequestParam Integer projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
@@ -204,9 +213,13 @@ public class ProjectController {
         List<User> users = projectService.getAllProjectWorkers(project.get());
         List<ShowUserDTO> workersRet = new ArrayList<>();
         for(User worker : users){
+            List<String> roles = new ArrayList<>();
+            for(Role role : worker.getRoles()){
+                roles.add(role.getName());
+            }
             ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
                     worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
-                    worker.getNumber(), worker.getRoles());
+                    worker.getNumber(), roles);
             workersRet.add(user);
         }
         return ResponseEntity.ok(workersRet);
