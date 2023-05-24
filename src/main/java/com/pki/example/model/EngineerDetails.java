@@ -19,8 +19,9 @@ public class EngineerDetails {
 
     private String CvUrl;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @MapsId
     private User user;
 
     public EngineerDetails(User user, Seniority seniority){

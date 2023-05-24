@@ -16,8 +16,9 @@ public class AdminLogins {
 
     private Boolean changedPassword;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @MapsId
     private User user;
 
     public AdminLogins(User user, Boolean flag){
