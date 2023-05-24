@@ -10,10 +10,7 @@ import com.pki.example.repo.RoleRepository;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
 import com.pki.example.model.*;
-import com.pki.example.repo.AdminRepository;
-import com.pki.example.repo.DenialRequestsRepository;
-import com.pki.example.repo.RoleRepository;
-import com.pki.example.repo.UserRepository;
+import com.pki.example.repo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -41,6 +38,7 @@ public class AuthenticationService {
     private final IEmailService emailService;
     private final MagicLinkRepository magicLinkRepository;
     private final AdminRepository adminRepository;
+    private final EngineersDetsRepository detsRepository;
 
 
 
@@ -68,11 +66,14 @@ public class AuthenticationService {
                 String salt = generateSalt();
                 Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
                 List<Role> retListRole = new ArrayList<>();
+                User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
                 for(String s : request.getTitle())
                 {
                     if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
+                        EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
+                        detsRepository.save(engDet);
                         retListRole.add(rolE);
                     }
                     if(RoleEnum.ROLE_HR.toString().equals(s))
@@ -85,8 +86,15 @@ public class AuthenticationService {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_MANAGER.ordinal() + 1);
                         retListRole.add(rolE);
                     }
+                    if(RoleEnum.ROLE_ADMIN.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_MANAGER.ordinal() + 1);
+                        AdminLogins admin = new AdminLogins(user, false);
+                        adminRepository.save(admin);
+                        retListRole.add(rolE);
+                    }
                 }
-                User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
+                user.setRoles(retListRole);
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
                 userRepository.save(user);
@@ -94,17 +102,19 @@ public class AuthenticationService {
                 return user;
             }
         }
-        else
-        {
-                String salt = generateSalt();
-                Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
+        else {
+            String salt = generateSalt();
+            Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
             List<Role> retListRole = new ArrayList<>();
+            User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
                 for(String s : request.getTitle())
                 {
                     if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
                         if (!retListRole.contains(rolE)) {
+                            EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
+                            detsRepository.save(engDet);
                             retListRole.add(rolE);
                         }
                     }
@@ -122,18 +132,24 @@ public class AuthenticationService {
                             retListRole.add(rolE);
                         }
                     }
+                    if(RoleEnum.ROLE_ADMIN.toString().equals(s))
+                    {
+                        Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ADMIN.ordinal() + 1);
+                        if (!retListRole.contains(rolE)) {
+                            AdminLogins admin = new AdminLogins(user, false);
+                            adminRepository.save(admin);
+                            retListRole.add(rolE);
+                        }
+                    }
                 }
-                User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
+                user.setRoles(retListRole);
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
                 userRepository.save(user);
 
                 return user;
-
         }
         return null;
-
-
     }
 
     public String generateNewAccessToken(String refreshToken,String token) {
@@ -328,7 +344,7 @@ public class AuthenticationService {
     public void updateUser(UpdateUserDTO informations) throws NoSuchAlgorithmException {
         User user = getCurrentUser();
         String salt = generateSalt();
-        if(!userRepository.existsByUsername(informations.username)){user.setUsername(informations.username);
+        if(user.getUsername().equals(informations.username)){
             user.setPassword(hashPassword(informations.password, salt));
             user.setFirstname(informations.firstname);
             user.setLastname(informations.lastname);
@@ -338,7 +354,18 @@ public class AuthenticationService {
             user.setState(informations.state);
             user.setSalt(salt);
             userRepository.save(user);
-        }
+        }else if(!userRepository.existsByUsername(informations.username)){
+            user.setUsername(informations.username);
+            user.setPassword(hashPassword(informations.password, salt));
+            user.setFirstname(informations.firstname);
+            user.setLastname(informations.lastname);
+            user.setAddress(informations.address);
+            user.setNumber(informations.number);
+            user.setCity(informations.city);
+            user.setState(informations.state);
+            user.setSalt(salt);
+            userRepository.save(user);
+        }else
         throw new Error("Username already exists");
     }
 
@@ -346,7 +373,12 @@ public class AuthenticationService {
         String salt = generateSalt();
         user.setPassword(hashPassword(newpassword, salt));
         user.setSalt(salt);
-        if(user.getRoles().contains(RoleEnum.ROLE_ADMIN)){
+        List<Role> roles = user.getRoles();
+        List<String> roleList = new ArrayList<>();
+        for( Role rol : roles){
+            roleList.add(rol.getName());
+        }
+        if(roleList.contains("ROLE_ADMIN")){
            AdminLogins adminLogins = adminRepository.getAdminLoginsByUser(user);
            adminLogins.setChangedPassword(true);
            adminRepository.save(adminLogins);
@@ -365,7 +397,6 @@ public class AuthenticationService {
                 return userRepository.findOneByUsername(username);
             }
         }
-
         return null;
     }
 }

@@ -19,4 +19,9 @@ public class AdminLogins {
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
+
+    public AdminLogins(User user, Boolean flag){
+        this.user = user;
+        this.changedPassword = flag;
+    }
 }

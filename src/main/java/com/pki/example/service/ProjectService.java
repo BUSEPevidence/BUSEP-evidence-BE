@@ -30,14 +30,16 @@ public class ProjectService {
     }
 
     public void updateProject(UpdateProjectDTO request) {
-        Optional<Project> project = projectRepository.findById(request.id);
-        if(project.isPresent()){
+        Optional<Project> project = projectRepository.findById(request.projectId);
+        if(project.get() != null){
             project.get().setTitle(request.title);
             project.get().setDescription(request.description);
             project.get().setStartTime(request.startTime);
             project.get().setEndTime(request.endTime);
-        }
+            projectRepository.save(project.get());
+        }else{
         throw new Error("Project not found");
+        }
     }
 
     public void addWorkerToProject(User worker, Project project, String description){

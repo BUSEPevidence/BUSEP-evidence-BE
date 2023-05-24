@@ -1,19 +1,19 @@
 package com.pki.example.service;
 
-import com.pki.example.dto.EngineerInfoDTO;
-import com.pki.example.dto.ExperienceDTO;
+import com.pki.example.dto.*;
 import com.pki.example.model.*;
 import com.pki.example.repo.EngineersDetsRepository;
 import com.pki.example.repo.ExperienceRepository;
 import com.pki.example.repo.UserRepository;
 import com.pki.example.repo.WorkOnProjectRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.pki.example.uploader.FileUploadService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
+@RequiredArgsConstructor
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -21,14 +21,7 @@ public class UserService {
     private final WorkOnProjectRepository workOnProjectRepository;
     private final EngineersDetsRepository engineersDetsRepository;
 
-    @Autowired
-    public UserService(UserRepository userRepository,ExperienceRepository experienceRepository,
-                       WorkOnProjectRepository workOnProjectRepository,EngineersDetsRepository engineersDetsRepository) {
-        this.userRepository = userRepository;
-        this.experienceRepository = experienceRepository;
-        this.workOnProjectRepository = workOnProjectRepository;
-        this.engineersDetsRepository = engineersDetsRepository;
-    }
+    private final FileUploadService fileUploadService;
 
     public List<User> getAll() {
         return userRepository.findAll();
@@ -42,6 +35,7 @@ public class UserService {
                 expWork = exp;
             }
         }
+        expWork.setGrade(experience.grade);
         experienceRepository.save(expWork);
     }
 
@@ -83,10 +77,20 @@ public class UserService {
         engineersDetsRepository.save(engdet);
     }
 
-    public EngineerInfoDTO getAllEngineerInfo(User user){
+    public ShowEngineerDTO getAllEngineerInfo(User user){
         EngineerDetails engDet = engineersDetsRepository.findDistinctByUser(user);
         List<Experience> exp = experienceRepository.findAllByUser(user);
-        EngineerInfoDTO engInfo = new EngineerInfoDTO(user, exp, engDet);
-        return engInfo;
+        String url = fileUploadService.downloadFile(engDet.getCvUrl());
+        ShowEngineerDetailsDTO details = new ShowEngineerDetailsDTO(engDet.getSeniority(),url);
+        List<ShowExperienceDTO> experiences = new ArrayList<>();
+        for(Experience ex : exp){
+            ShowExperienceDTO experienceDTO = new ShowExperienceDTO(ex.getId(),ex.getTitle(),ex.getGrade());
+            experiences.add(experienceDTO);
+        }
+        ShowUserDTO userDTO = new ShowUserDTO(user.getUsername(),user.getFirstname(),
+                user.getLastname(), user.getAddress(),user.getCity(), user.getState(),
+                user.getNumber(), user.getRoles());
+        ShowEngineerDTO engineer = new ShowEngineerDTO(userDTO,experiences,details);
+        return engineer;
     }
 }

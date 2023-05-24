@@ -15,7 +15,7 @@ import java.io.InputStream;
 
 @Component
 public class FirebaseInitializer implements ResourceLoaderAware {
-    private final String firebaseConfigPath = "classpath:busepdb-firebase-adminsdk-zz9go-dcfcfe419b.json";
+    private final String firebaseConfigPath = "classpath:busepdb-firebase-adminsdk-zz9go-b90fec76a6.json";
     private final String storageBucket = "busepdb.appspot.com";
 
     private ResourceLoader resourceLoader;

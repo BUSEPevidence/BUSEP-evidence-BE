@@ -23,4 +23,8 @@ public class EngineerDetails {
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
+    public EngineerDetails(User user, Seniority seniority){
+        this.user = user;
+        this.seniority = seniority;
+    }
 }
