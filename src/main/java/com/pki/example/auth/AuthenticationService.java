@@ -62,8 +62,6 @@ public class AuthenticationService {
                 String salt = generateSalt();
                 Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
                 List<Role> retListRole = new ArrayList<>();
-                //Boolean isAdmin = false;
-                //Boolean isEngineer = false;
                 User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
                 userRepository.save(user);
                 for(String s : request.getTitle())
@@ -104,8 +102,6 @@ public class AuthenticationService {
             String salt = generateSalt();
             Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
             List<Role> retListRole = new ArrayList<>();
-            //Boolean isAdmin = false;
-            //Boolean isEngineer = false;
             User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
             userRepository.save(user);
             for(String s : request.getTitle())
