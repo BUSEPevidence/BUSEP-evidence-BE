@@ -3,19 +3,17 @@ package com.pki.example.controller;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.auth.JwtService;
 import com.pki.example.email.model.EmailDetails;
-import com.pki.example.email.service.EmailService;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -80,7 +78,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
-    
+
+    @PreAuthorize("hasAuthority('APPROVE')")
     @PostMapping("/approve")
     public ResponseEntity<String> approveRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
         System.out.println("Stigao request  " + request);
@@ -97,6 +96,7 @@ public class AuthController {
             return ResponseEntity.ok("{\"Message\": \"" + "User not found" + "\"}");
     }
 
+    @PreAuthorize("hasAuthority('DENIE')")
     @PostMapping("/denie")
     public ResponseEntity<String> denieRegister(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
         User retUser = authenticationService.getUser(request);
