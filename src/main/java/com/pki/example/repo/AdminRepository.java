@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AdminRepository  extends JpaRepository<AdminLogins,Integer> {
     public AdminLogins getAdminLoginsByUser(User user);
+    public AdminLogins findOneByUserId(int userId);
 }

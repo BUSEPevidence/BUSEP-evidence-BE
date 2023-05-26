@@ -25,4 +25,31 @@ public class AdminLogins {
         this.user = user;
         this.changedPassword = flag;
     }
+    public AdminLogins(Boolean flag){
+        this.changedPassword = flag;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+
+    public Boolean getChangedPassword() {
+        return changedPassword;
+    }
+
+    public void setChangedPassword(Boolean changedPassword) {
+        this.changedPassword = changedPassword;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

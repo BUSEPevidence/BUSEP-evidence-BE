@@ -8,20 +8,30 @@ import com.pki.example.repo.UserRepository;
 import com.pki.example.repo.WorkOnProjectRepository;
 import com.pki.example.uploader.FileUploadService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-@RequiredArgsConstructor
 @Service
 public class UserService {
-    private final UserRepository userRepository;
-    private final ExperienceRepository experienceRepository;
-    private final WorkOnProjectRepository workOnProjectRepository;
-    private final EngineersDetsRepository engineersDetsRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-    private final FileUploadService fileUploadService;
+    @Autowired
+    private ExperienceRepository experienceRepository;
+
+    @Autowired
+    private WorkOnProjectRepository workOnProjectRepository;
+
+    @Autowired
+    private EngineersDetsRepository engineersDetsRepository;
+
+    private FileUploadService fileUploadService;
 
     public List<User> getAll() {
         return userRepository.findAll();
@@ -69,6 +79,19 @@ public class UserService {
        EngineerDetails engdet = engineersDetsRepository.findDistinctByUser(user);
        engdet.setCvUrl(url);
        engineersDetsRepository.save(engdet);
+    }
+    public static String hashPassword(String password, String salt) throws NoSuchAlgorithmException {
+        String saltedPassword = salt + password;
+
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        byte[] hashBytes = messageDigest.digest(saltedPassword.getBytes());
+
+        return Base64.getEncoder().encodeToString(hashBytes);
+    }
+    public void changePassword(String username, String password) throws NoSuchAlgorithmException {
+        User user = userRepository.findOneByUsername(username);
+        user.setPassword(hashPassword(password,user.getSalt()));
+        userRepository.save(user);
     }
 
     public void changeSeniority(User user, Seniority seniority){
