@@ -1,6 +1,7 @@
 package com.pki.example.auth;
 
 
+import com.pki.example.dto.NewPasswordDTO;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
 import com.pki.example.email.model.EmailDetails;
@@ -298,15 +299,12 @@ public class AuthenticationService {
 
     public void updateEngineer(UpdateEngineerDTO informations) throws NoSuchAlgorithmException {
         User user = getCurrentUser();
-        String salt = generateSalt();
-        user.setPassword(hashPassword(informations.password, salt));
         user.setFirstname(informations.firstname);
         user.setLastname(informations.lastname);
         user.setAddress(informations.address);
         user.setNumber(informations.number);
         user.setCity(informations.city);
         user.setState(informations.state);
-        user.setSalt(salt);
         userRepository.save(user);
     }
 
@@ -338,21 +336,25 @@ public class AuthenticationService {
         throw new Error("Username already exists");
     }
 
-    public void changePassword(User user, String newpassword) throws NoSuchAlgorithmException {
-        String salt = generateSalt();
-        user.setPassword(hashPassword(newpassword, salt));
-        user.setSalt(salt);
-        List<Role> roles = user.getRoles();
-        List<String> roleList = new ArrayList<>();
-        for( Role rol : roles){
-            roleList.add(rol.getName());
+    public void changePassword(User user, NewPasswordDTO dto) throws NoSuchAlgorithmException {
+        if(user.getPassword().equals(hashPassword(dto.currentPassword,user.getSalt()))) {
+            String salt = generateSalt();
+            user.setPassword(hashPassword(dto.newPassword, salt));
+            user.setSalt(salt);
+            List<Role> roles = user.getRoles();
+            List<String> roleList = new ArrayList<>();
+            for (Role rol : roles) {
+                roleList.add(rol.getName());
+            }
+            if (roleList.contains("ROLE_ADMIN")) {
+                AdminLogins adminLogins = adminRepository.getAdminLoginsByUser(user);
+                adminLogins.setChangedPassword(true);
+                adminRepository.save(adminLogins);
+            }
+            userRepository.save(user);
+        }else{
+            throw new Error("wrong current password");
         }
-        if(roleList.contains("ROLE_ADMIN")){
-           AdminLogins adminLogins = adminRepository.getAdminLoginsByUser(user);
-           adminLogins.setChangedPassword(true);
-           adminRepository.save(adminLogins);
-        }
-        userRepository.save(user);
     }
     
     public User getCurrentUser() {

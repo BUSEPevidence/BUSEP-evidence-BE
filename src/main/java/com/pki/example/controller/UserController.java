@@ -105,10 +105,9 @@ public class UserController {
     @PreAuthorize("hasAuthority('CHANGE_PASSWORD')")
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(@RequestBody
-                            @Pattern(regexp = "^(?=.*\\d)(?=.*[a-zA-Z]).{8,}$", message = "Password must be at least 8 characters long and contain both letters and numbers")
-                            String password) throws NoSuchAlgorithmException {
+                            NewPasswordDTO dto) throws NoSuchAlgorithmException {
         User user = authService.getCurrentUser();
-        authService.changePassword(user,password);
+        authService.changePassword(user,dto);
         return ResponseEntity.ok("Successfully updated password");
     }
 

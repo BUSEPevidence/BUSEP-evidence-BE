@@ -80,8 +80,11 @@ public class UserService {
     public ShowEngineerDTO getAllEngineerInfo(User user){
         EngineerDetails engDet = engineersDetsRepository.findDistinctByUser(user);
         List<Experience> exp = experienceRepository.findAllByUser(user);
-        String url = fileUploadService.downloadFile(engDet.getCvUrl());
-        ShowEngineerDetailsDTO details = new ShowEngineerDetailsDTO(engDet.getSeniority(),url);
+        String url = "";
+        if(engDet.getCvUrl() != null){
+            url = fileUploadService.downloadFile(engDet.getCvUrl());
+        }
+        ShowEngineerDetailsDTO details = new ShowEngineerDetailsDTO(engDet.getSeniority().toString(),url);
         List<ShowExperienceDTO> experiences = new ArrayList<>();
         for(Experience ex : exp){
             ShowExperienceDTO experienceDTO = new ShowExperienceDTO(ex.getId(),ex.getTitle(),ex.getGrade());
