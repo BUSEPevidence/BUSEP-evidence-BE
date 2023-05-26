@@ -195,6 +195,7 @@ public class ProjectController {
     @PutMapping("/experience")
     public ResponseEntity<String> updateProjectExperience(@RequestBody UpdateWorkerTaskDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
+        System.out.println(project.get());
         if(project.isEmpty()){
             throw new Error("No such project");
         }

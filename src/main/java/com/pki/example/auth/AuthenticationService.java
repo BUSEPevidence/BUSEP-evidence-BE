@@ -1,14 +1,11 @@
 package com.pki.example.auth;
 
 
-import com.pki.example.email.model.EmailDetails;
-import com.pki.example.email.service.IEmailService;
-import com.pki.example.model.*;
-import com.pki.example.repo.DenialRequestsRepository;
-import com.pki.example.repo.MagicLinkRepository;
-import com.pki.example.repo.RoleRepository;
+import com.pki.example.dto.NewPasswordDTO;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
+import com.pki.example.email.model.EmailDetails;
+import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.*;
 import lombok.RequiredArgsConstructor;
@@ -67,13 +64,14 @@ public class AuthenticationService {
                 Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
                 List<Role> retListRole = new ArrayList<>();
                 User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
+                userRepository.save(user);
                 for(String s : request.getTitle())
                 {
                     if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
-//                        EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
-//                        detsRepository.save(engDet);
+                        EngineerDetails dets = new EngineerDetails(user, Seniority.JUNIOR);
+                        detsRepository.save(dets);
                         retListRole.add(rolE);
                     }
                     if(RoleEnum.ROLE_HR.toString().equals(s))
@@ -89,8 +87,8 @@ public class AuthenticationService {
                     if(RoleEnum.ROLE_ADMIN.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_MANAGER.ordinal() + 1);
-//                        AdminLogins admin = new AdminLogins(user, false);
-//                        adminRepository.save(admin);
+                        AdminLogins logins =new AdminLogins(user,false);
+                        adminRepository.save(logins);
                         retListRole.add(rolE);
                     }
                 }
@@ -98,7 +96,6 @@ public class AuthenticationService {
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
                 userRepository.save(user);
-
                 return user;
             }
         }
@@ -107,14 +104,15 @@ public class AuthenticationService {
             Role r = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
             List<Role> retListRole = new ArrayList<>();
             User user = new User(request.getUsername(), hashPassword(request.getPassword(), salt), request.getFirstname(), request.getLastname(), request.getAddress(), request.getCity(), request.getState(), request.getNumber(), retListRole, salt, request.isAdminApprove(), r, null, null);
-                for(String s : request.getTitle())
+            userRepository.save(user);
+            for(String s : request.getTitle())
                 {
                     if(RoleEnum.ROLE_ENGINEER.toString().equals(s))
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ENGINEER.ordinal() + 1);
                         if (!retListRole.contains(rolE)) {
-//                            EngineerDetails engDet = new EngineerDetails(user,Seniority.JUNIOR);
-//                            detsRepository.save(engDet);
+                            EngineerDetails dets = new EngineerDetails(user, Seniority.JUNIOR);
+                            detsRepository.save(dets);
                             retListRole.add(rolE);
                         }
                     }
@@ -136,8 +134,8 @@ public class AuthenticationService {
                     {
                         Role rolE = roleRepository.findOneById(RoleEnum.ROLE_ADMIN.ordinal() + 1);
                         if (!retListRole.contains(rolE)) {
-//                            AdminLogins admin = new AdminLogins(user, false);
-//                            adminRepository.save(admin);
+                            AdminLogins logins =new AdminLogins(user,false);
+                            adminRepository.save(logins);
                             retListRole.add(rolE);
                         }
                     }
@@ -146,7 +144,6 @@ public class AuthenticationService {
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
                 userRepository.save(user);
-
                 return user;
         }
         return null;
@@ -260,33 +257,6 @@ public class AuthenticationService {
                 .build();
     }
 
-    /*
-    public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
-    System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
-
-    User saltUser = userRepository.findOneByUsername(request.getUsername());
-
-    User user = userRepository.findByUsernameAndPassword(request.getUsername(), hashPassword(request.getPassword(),saltUser.getSalt()));
-    System.out.println("Proso salt usera");
-    System.out.println(user.getUsername() + " " + user.getFirstname());
-
-    String jwtToken = "";
-    String refreshToken = "";
-
-    if (user != null && user.isAdminApprove()) {
-        jwtToken = jwtService.generateToken(user);
-        refreshToken = jwtService.generateRefreshToken();
-        user.setRefreshToken(refreshToken);
-        userRepository.save(user);
-    }
-
-    return AuthenticationResponse.builder()
-            .token(jwtToken)
-            .refreshToken(refreshToken)
-            .build();
-}
-     */
-
     public User approve(String request,boolean check) throws NoSuchAlgorithmException {
         User user = userRepository.findByActivationCode(request);
         if(check)
@@ -329,15 +299,12 @@ public class AuthenticationService {
 
     public void updateEngineer(UpdateEngineerDTO informations) throws NoSuchAlgorithmException {
         User user = getCurrentUser();
-        String salt = generateSalt();
-        user.setPassword(hashPassword(informations.password, salt));
         user.setFirstname(informations.firstname);
         user.setLastname(informations.lastname);
         user.setAddress(informations.address);
         user.setNumber(informations.number);
         user.setCity(informations.city);
         user.setState(informations.state);
-        user.setSalt(salt);
         userRepository.save(user);
     }
 
@@ -369,24 +336,27 @@ public class AuthenticationService {
         throw new Error("Username already exists");
     }
 
-    public void changePassword(User user, String newpassword) throws NoSuchAlgorithmException {
-        String salt = generateSalt();
-        user.setPassword(hashPassword(newpassword, salt));
-        user.setSalt(salt);
-        List<Role> roles = user.getRoles();
-        List<String> roleList = new ArrayList<>();
-        for( Role rol : roles){
-            roleList.add(rol.getName());
+    public void changePassword(User user, NewPasswordDTO dto) throws NoSuchAlgorithmException {
+        if(user.getPassword().equals(hashPassword(dto.currentPassword,user.getSalt()))) {
+            String salt = generateSalt();
+            user.setPassword(hashPassword(dto.newPassword, salt));
+            user.setSalt(salt);
+            List<Role> roles = user.getRoles();
+            List<String> roleList = new ArrayList<>();
+            for (Role rol : roles) {
+                roleList.add(rol.getName());
+            }
+            if (roleList.contains("ROLE_ADMIN")) {
+                AdminLogins adminLogins = adminRepository.getAdminLoginsByUser(user);
+                adminLogins.setChangedPassword(true);
+                adminRepository.save(adminLogins);
+            }
+            userRepository.save(user);
+        }else{
+            throw new Error("wrong current password");
         }
-        if(roleList.contains("ROLE_ADMIN")){
-           AdminLogins adminLogins = adminRepository.getAdminLoginsByUser(user);
-           adminLogins.setChangedPassword(true);
-           adminRepository.save(adminLogins);
-        }
-        userRepository.save(user);
     }
-
-
+    
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
