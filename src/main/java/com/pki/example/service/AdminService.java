@@ -9,9 +9,11 @@ import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.RootCertificateDTO;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
+import com.pki.example.model.AdminLogins;
 import com.pki.example.model.Permission;
 import com.pki.example.model.Role;
 import com.pki.example.model.User;
+import com.pki.example.repo.AdminRepository;
 import com.pki.example.repo.PermissionRepository;
 import com.pki.example.repo.RoleRepository;
 import com.pki.example.repo.UserRepository;
@@ -69,6 +71,9 @@ public class AdminService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private AdminRepository adminRepository;
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -373,6 +378,17 @@ public class AdminService {
            return false;
        return true;
     }
+
+    public boolean checkTime(String username) {
+        System.out.println(username + " evo username");
+        User user = userRepository.findOneByUsername(username);
+        System.out.println(user.getId() + " eo id");
+        System.out.println(user.getFirstname() + " eo name");
+        AdminLogins adminLogins = adminRepository.findOneByUserId(user.getId());
+        if(adminLogins == null) return true;
+        if(adminLogins.getChangedPassword())return true;
+        return false;
+    }
     public Map getAllFromStore(String store,String password) {
         Map<String, Certificate> certificatesMap = new HashMap<>();
         try {
@@ -628,6 +644,12 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
 
         return "Added";
     }
+    public void FlagUp(int user_id)
+    {
+       AdminLogins adminLogins = adminRepository.findOneByUserId(user_id);
+       adminLogins.setChangedPassword(true);
+       adminRepository.save(adminLogins);
+    }
     public String DeleteRolePermission(int id,Permission permission)
     {
 
@@ -660,16 +682,17 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
                  for (Role role : user.getRoles()) {
                      tmp += role.getName() + ",";
                  }
-                 tmp = tmp.substring(0, tmp.length() - 1);
+                 if (tmp.length() != 0)
+                     tmp = tmp.substring(0, tmp.length() - 1);
                  user.setPassword(tmp);
                  tmp = "";
                  retUsers.add(user);
-             }
 
+             }
 
          }
 
-
+        System.out.println(retUsers.size() + " eo velicina");
         return retUsers;
     }
 

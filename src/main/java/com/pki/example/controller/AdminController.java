@@ -1,5 +1,6 @@
 package com.pki.example.controller;
 
+import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.model.Permission;
@@ -8,6 +9,7 @@ import com.pki.example.model.RoleEnum;
 import com.pki.example.model.User;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
+import com.pki.example.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -34,8 +36,15 @@ public class AdminController {
 
     @Autowired
     AdminService adminService = new AdminService();
+
+    @Autowired
+    AuthenticationService authenticationService = new AuthenticationService();
+
     @Autowired
     CRLService crlService = new CRLService();
+
+    @Autowired
+    UserService userService = new UserService();
 
     private static KeyStoreReader keyStoreReader;
 
@@ -187,6 +196,24 @@ public class AdminController {
     @GetMapping("/get-trusted")
     public ArrayList<String> getTrusted() throws Exception {
         return adminService.getTrustedAliases();
+    }
+    @GetMapping("/first-login")
+    public ResponseEntity<String> firstLogin(@RequestParam("id") String id) throws Exception {
+        User user = authenticationService.getUserByUsername(id);
+        adminService.FlagUp(user.getId());
+        return ResponseEntity.ok().body("{\"Result\": \"" + "flag up!" + "\"}");
+    }
+
+    @GetMapping("/check-time")
+    public ResponseEntity<Boolean> checkTime(@RequestParam("username") String username) throws Exception {
+        boolean valid = adminService.checkTime(username);
+        return ResponseEntity.ok(valid);
+    }
+    @PostMapping("/password")
+    public ResponseEntity<String> changePassword(@RequestBody LoginDTO loginDTO) throws Exception {
+        System.out.println(loginDTO.getUsername() + " " + loginDTO.getPassword());
+        userService.changePassword(loginDTO.getUsername(),loginDTO.getPassword());
+        return ResponseEntity.ok().body("{\"Result\": \"" + "password changed!" + "\"}");
     }
 
     @GetMapping("/get-requests")
