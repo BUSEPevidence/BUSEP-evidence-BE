@@ -73,11 +73,22 @@ public class ProjectController {
             throw new Error("No such project");
         }
         List<User> activeWorkers = projectService.getAllActiveProjectWorkers(project.get());
+        System.out.println("Ima ovoliko aktivnih radnika na projektu: " + activeWorkers.size());
         List<ShowUserDTO> workersRet = new ArrayList<>();
         for(User worker : activeWorkers){
             List<String> roles = new ArrayList<>();
-            for(Role role : worker.getRoles()){
-                roles.add(role.getName());
+            System.out.println("Ima ovoliko rola u radniku: " + worker.getUsername() + "!!!!! => " + worker.getRoles().size());
+            boolean adminAdded = false; // Flag to track if "ROLE_ADMIN" has been added
+            for (Role role : worker.getRoles()) {
+                System.out.println("Dodajem rolu: " + role.getName());
+                if (role.getName().equals("ROLE_ADMIN")) {
+                    if (!adminAdded) {
+                        roles.add(role.getName());
+                        adminAdded = true; // Set the flag to true after adding "ROLE_ADMIN"
+                    }
+                } else {
+                    roles.add(role.getName());
+                }
             }
             ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
                     worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
