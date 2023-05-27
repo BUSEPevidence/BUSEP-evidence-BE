@@ -7,7 +7,6 @@ import com.pki.example.repo.ExperienceRepository;
 import com.pki.example.repo.UserRepository;
 import com.pki.example.repo.WorkOnProjectRepository;
 import com.pki.example.uploader.FileUploadService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +29,7 @@ public class UserService {
 
     @Autowired
     private EngineersDetsRepository engineersDetsRepository;
-
+    @Autowired
     private FileUploadService fileUploadService;
 
     public List<User> getAll() {
