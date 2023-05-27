@@ -9,6 +9,7 @@ import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,19 +24,27 @@ import java.util.*;
 
 
 @Service
-@RequiredArgsConstructor
 public class AuthenticationService {
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
-    private final RoleRepository roleRepository;
-    private final DenialRequestsRepository denialRequestsRepository;
-    private final IEmailService emailService;
-    private final MagicLinkRepository magicLinkRepository;
-    private final AdminRepository adminRepository;
-    private final EngineersDetsRepository detsRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private DenialRequestsRepository denialRequestsRepository;
+    @Autowired
+    private IEmailService emailService;
+    @Autowired
+    private MagicLinkRepository magicLinkRepository;
+    @Autowired
+    private AdminRepository adminRepository;
+    @Autowired
+    private EngineersDetsRepository detsRepository;
 
 
 
@@ -289,6 +298,10 @@ public class AuthenticationService {
     }
     public User getUser(RegisterRequest request) throws NoSuchAlgorithmException {
         User user = userRepository.findOneByUsername(request.getUsername());
+        return user;
+    }
+    public User getUserByUsername(String request) throws NoSuchAlgorithmException {
+        User user = userRepository.findOneByUsername(request);
         return user;
     }
     public User getUserByCode(String request) throws NoSuchAlgorithmException {
