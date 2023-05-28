@@ -116,4 +116,8 @@ public class ProjectService {
             workOnProjectRepository.save(workproject);
         }
     }
+
+    public WorkingOnProject findDatesByUserAndProject(User user, Project project) {
+        return this.workOnProjectRepository.getByUserAndProject(user, project);
+    }
 }
