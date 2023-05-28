@@ -8,7 +8,6 @@ import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.*;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -323,27 +322,22 @@ public class AuthenticationService {
 
     public void updateUser(UpdateUserDTO informations) throws NoSuchAlgorithmException {
         User user = getCurrentUser();
-        String salt = generateSalt();
         if(user.getUsername().equals(informations.username)){
-            user.setPassword(hashPassword(informations.password, salt));
             user.setFirstname(informations.firstname);
             user.setLastname(informations.lastname);
             user.setAddress(informations.address);
             user.setNumber(informations.number);
             user.setCity(informations.city);
             user.setState(informations.state);
-            user.setSalt(salt);
             userRepository.save(user);
         }else if(!userRepository.existsByUsername(informations.username)){
             user.setUsername(informations.username);
-            user.setPassword(hashPassword(informations.password, salt));
             user.setFirstname(informations.firstname);
             user.setLastname(informations.lastname);
             user.setAddress(informations.address);
             user.setNumber(informations.number);
             user.setCity(informations.city);
             user.setState(informations.state);
-            user.setSalt(salt);
             userRepository.save(user);
         }else
         throw new Error("Username already exists");
