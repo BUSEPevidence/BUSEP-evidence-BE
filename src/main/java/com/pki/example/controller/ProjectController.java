@@ -77,18 +77,8 @@ public class ProjectController {
         List<ShowUserDTO> workersRet = new ArrayList<>();
         for(User worker : activeWorkers){
             List<String> roles = new ArrayList<>();
-            System.out.println("Ima ovoliko rola u radniku: " + worker.getUsername() + "!!!!! => " + worker.getRoles().size());
-            boolean adminAdded = false; // Flag to track if "ROLE_ADMIN" has been added
-            for (Role role : worker.getRoles()) {
-                System.out.println("Dodajem rolu: " + role.getName());
-                if (role.getName().equals("ROLE_ADMIN")) {
-                    if (!adminAdded) {
-                        roles.add(role.getName());
-                        adminAdded = true; // Set the flag to true after adding "ROLE_ADMIN"
-                    }
-                } else {
-                    roles.add(role.getName());
-                }
+            for (Role role : userRepository.findDistinctRolesByUser(worker)) {
+                roles.add(role.getName());
             }
             ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
                     worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
@@ -232,6 +222,33 @@ public class ProjectController {
             ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
                     worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
                     worker.getNumber(), roles);
+            workersRet.add(user);
+        }
+        return ResponseEntity.ok(workersRet);
+    }
+
+    @PreAuthorize("hasAuthority('PROJECT_WORKERS_WITH_DATES')")
+    @GetMapping("/workers-with-dates")
+    public ResponseEntity<List<ShowWorkOnProjectWithDatesDTO>> projectWorkersWithDates(@RequestParam Integer projectId) {
+        Optional<Project> project = projectRepository.findById(projectId);
+        if(project.isEmpty()){
+            throw new Error("No such project");
+        }
+        List<User> users = projectService.getAllProjectWorkers(project.get());
+        List<ShowWorkOnProjectWithDatesDTO> workersRet = new ArrayList<>();
+        for(User worker : users){
+            Project realProject = project.orElse(null);
+            WorkingOnProject temp = projectService.findDatesByUserAndProject(worker, realProject);
+            System.out.println("Sarted working: " + temp.getStartedWorking().toString());
+            System.out.println("Ended working: " + temp.getEndedWorking().toString());
+            List<String> roles = new ArrayList<>();
+            for(Role role : userRepository.findDistinctRolesByUser(worker)){
+                roles.add(role.getName());
+            }
+            ShowWorkOnProjectWithDatesDTO user = new ShowWorkOnProjectWithDatesDTO(worker.getUsername(),worker.getFirstname(),
+                    worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
+                    worker.getNumber(), roles, temp.getStartedWorking(), temp.getEndedWorking());
+            System.out.println("USER TO BE RETURNED: " + user);
             workersRet.add(user);
         }
         return ResponseEntity.ok(workersRet);
