@@ -2,12 +2,15 @@ package com.pki.example.controller;
 
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
+import com.pki.example.email.model.EmailDetails;
+import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.Role;
 import com.pki.example.model.User;
 import com.pki.example.repo.UserRepository;
 import com.pki.example.service.UserService;
 import com.pki.example.uploader.FileUploadService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +18,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.Pattern;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @RestController
@@ -28,6 +33,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final AuthenticationService authService;
     private final FileUploadService uploadService;
+    private final IEmailService emailService;
 
     @PreAuthorize("hasAuthority('ALL_WORKERS')")
     @GetMapping("/all-workers")
@@ -86,6 +92,7 @@ public class UserController {
         authService.updateEngineer(dto);
         return ResponseEntity.ok("Successfully updated engineer profile");
     }
+
 
     @PreAuthorize("hasAuthority('LOGGED_USER')")
     @GetMapping("/user")

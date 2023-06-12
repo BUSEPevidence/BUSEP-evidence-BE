@@ -168,6 +168,7 @@ public class AuthenticationService {
     public String generatePasswordlessAccessToken(String email) {
         User user = userRepository.findOneByUsername(email);
         String token = jwtService.generate10MinuteToken(user);
+        if(user.getBlocked())return "";
         MagicLink mLink = new MagicLink();
         mLink.setUsed(false);
         mLink.setUsername(email);
@@ -212,18 +213,20 @@ public class AuthenticationService {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
 
         User saltUser = userRepository.findOneByUsername(request.getUsername());
-
+        System.out.println(hashPassword(request.getPassword(),saltUser.getSalt()) + " hesovan pass");
         User user = userRepository.findByUsernameAndPassword(request.getUsername(), hashPassword(request.getPassword(),saltUser.getSalt()));
 
         Date currentDate = new Date();
-        if(user.getRefreshToken() == null || user.getRefreshTokenExpiration() == null ||
-                currentDate.compareTo(user.getRefreshTokenExpiration()) < 0) {
-            user.setRefreshToken(UUID.randomUUID().toString());
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(new Date());
-            calendar.add(Calendar.YEAR, 1);
-            user.setRefreshTokenExpiration(calendar.getTime());
-            userRepository.save(user);
+        if(user != null) {
+            if (user.getRefreshToken() == null || user.getRefreshTokenExpiration() == null ||
+                    currentDate.compareTo(user.getRefreshTokenExpiration()) < 0) {
+                user.setRefreshToken(UUID.randomUUID().toString());
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(new Date());
+                calendar.add(Calendar.YEAR, 1);
+                user.setRefreshTokenExpiration(calendar.getTime());
+                userRepository.save(user);
+            }
         }
 
         System.out.println("Proso salt usera");
@@ -231,7 +234,7 @@ public class AuthenticationService {
         var jwtToken = "";
         String refreshToken = "";
 
-        if (user != null)
+        if (user != null && !user.getBlocked())
             if(user.isAdminApprove() == true) {
                 jwtToken = jwtService.generateToken(user);
         }

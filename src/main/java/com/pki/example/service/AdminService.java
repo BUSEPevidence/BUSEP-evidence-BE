@@ -671,6 +671,16 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
 
         return "Added";
     }
+    public String BlockUser(String username)
+    {
+
+        User user = userRepository.findOneByUsername(username);
+        user.setRefreshToken("");
+        user.setBlocked(true);
+        userRepository.save(user);
+
+        return "Blocked";
+    }
     public List<User> GetAllRegisterRequests()
     {
          String tmp = "";

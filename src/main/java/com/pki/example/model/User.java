@@ -55,6 +55,8 @@ public class User implements UserDetails {
 
     private Date refreshTokenExpiration;
 
+    private Boolean blocked;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "userId", referencedColumnName = "id"),
@@ -77,6 +79,18 @@ public class User implements UserDetails {
         this.adminApprove = adminApprove;
         this.dateAccepted = dateAccepted;
         this.dateDenial = dateDenial;
+    }
+
+    public User(Boolean blocked) {
+        this.blocked = blocked;
+    }
+
+    public Boolean getBlocked() {
+        return blocked;
+    }
+
+    public void setBlocked(Boolean blocked) {
+        this.blocked = blocked;
     }
 
     @Override

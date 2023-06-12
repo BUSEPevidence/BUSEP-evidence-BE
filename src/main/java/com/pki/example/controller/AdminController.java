@@ -216,6 +216,12 @@ public class AdminController {
         return ResponseEntity.ok().body("{\"Result\": \"" + "password changed!" + "\"}");
     }
 
+    @PostMapping("/block")
+    public ResponseEntity<String> blockUser(@RequestParam("username") String username) throws Exception {
+        adminService.BlockUser(username);
+        return ResponseEntity.ok().body("{\"Result\": \"" + "user blocked!" + "\"}");
+    }
+
     @GetMapping("/get-requests")
     public List<User> getRequests() throws Exception {
         return adminService.GetAllRegisterRequests();

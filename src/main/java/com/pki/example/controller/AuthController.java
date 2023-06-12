@@ -5,7 +5,10 @@ import com.pki.example.auth.JwtService;
 import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
+import com.pki.example.repo.UserRepository;
+import com.pki.example.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,11 +30,29 @@ public class AuthController {
     private final IEmailService emailService;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterRequest> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
         ResponseEntity.ok(authenticationService.register(request));
         return ResponseEntity.ok(request);
+    }
+
+
+    @PostMapping("/password")
+    public ResponseEntity<String> forgetPassword(@RequestParam("username") String username) throws NoSuchAlgorithmException {
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setMsgBody("Welcome!<br/>" +
+                "You can <a href=\"http://localhost:4200/login"+ "" + "\">Login here! Your new password is" + "tempPassword123" + "<a/></h2> <br/>");
+        emailDetails.setSubject("Welcome email");
+        emailDetails.setRecipient(username);
+        emailService.sendWelcomeMail(emailDetails);
+        userService.changePassword(username,"tempPassword123");
+        if(username != null)
+            return ResponseEntity.ok("{\"Message\": \"" + "Password sent on email, please change it" + "\"}");
+        else
+            return ResponseEntity.ok("{\"Message\": \"" + "User not found, put valid username" + "\"}");
     }
 
     @PostMapping("/login")
