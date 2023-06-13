@@ -17,6 +17,7 @@ public interface UserRepository extends JpaRepository<User,Integer> {
     User findByActivationCode(String activationCode);
     User findByUsernameAndPassword(String username, String password);
     Boolean existsByUsername(String username);
+    User findById(int id);
 
     @Query("SELECT DISTINCT u.roles FROM User u WHERE u = :user")
     List<Role> findDistinctRolesByUser(@Param("user") User user);
