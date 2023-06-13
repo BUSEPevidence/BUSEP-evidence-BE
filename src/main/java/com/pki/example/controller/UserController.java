@@ -135,4 +135,22 @@ public class UserController {
         return ResponseEntity.ok("Successfully added experience");
     }
 
+    @PreAuthorize("hasAuthority('FILTER')")
+    @PutMapping("/filter")
+    public ResponseEntity<List<ShowUserDTO>> filter(@RequestBody FilterParamsDTO dto) {
+        List<User> workers = userService.filterUsers(dto);
+        List<ShowUserDTO> workersRet = new ArrayList<>();
+        for(User worker : workers){
+            List<String> roles = new ArrayList<>();
+            for(Role role : worker.getRoles()){
+                roles.add(role.getName());
+            }
+            ShowUserDTO user = new ShowUserDTO(worker.getUsername(),worker.getFirstname(),
+                    worker.getLastname(), worker.getAddress(),worker.getCity(), worker.getState(),
+                    worker.getNumber(), roles);
+            workersRet.add(user);
+        }
+        return ResponseEntity.ok(workersRet);
+    }
+
 }
