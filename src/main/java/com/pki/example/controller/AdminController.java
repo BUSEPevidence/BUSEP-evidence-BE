@@ -1,5 +1,6 @@
 package com.pki.example.controller;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
 import com.pki.example.keystores.KeyStoreReader;
@@ -10,6 +11,7 @@ import com.pki.example.model.User;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import com.pki.example.service.UserService;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -45,6 +47,9 @@ public class AdminController {
 
     @Autowired
     UserService userService = new UserService();
+
+
+
 
     private static KeyStoreReader keyStoreReader;
 

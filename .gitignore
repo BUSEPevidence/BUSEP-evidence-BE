@@ -4,8 +4,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+
 /src/main/resources/static/CRL.jks
 /src/main/resources/static/example.jks
+/src/main/resources/logs
 ### STS ###
 .apt_generated
 .classpath

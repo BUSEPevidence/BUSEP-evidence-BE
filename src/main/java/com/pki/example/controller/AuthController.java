@@ -1,14 +1,17 @@
 package com.pki.example.controller;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.auth.JwtService;
 import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.UserRepository;
+import com.pki.example.service.AlertService;
 import com.pki.example.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +35,8 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final AlertService alertService;
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     @PostMapping("/register")
     public ResponseEntity<RegisterRequest> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
@@ -61,6 +66,9 @@ public class AuthController {
         String token = authenticationResponse.getToken();
         String refreshToken = authenticationResponse.getRefreshToken();
         System.out.println(request.getUsername() + " " + request.getPassword());
+        logger.info("Ovo je informacija koju želite da logujete.");
+        alertService.sendEmailNotification("critical","justdoit0508@gmail.com");
+        alertService.sendPushNotification("Critical");
         if (!token.equals("")) {
             return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
         } else {
