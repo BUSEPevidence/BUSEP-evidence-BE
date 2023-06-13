@@ -53,11 +53,7 @@ public class UserService {
         users = userRepository.findAll();
         List<WorkingOnProject> workingOnProjects = workOnProjectRepository.getAllByProject(project);
         for (WorkingOnProject workingOnProject : workingOnProjects) {
-            Date date = new Date();
-            java.sql.Date now = new java.sql.Date(date.getTime());
-            if(workingOnProject.getEndedWorking().after(now)){
                 users.remove(workingOnProject.getUser());
-            }
         }
         return users;
     }
@@ -121,5 +117,22 @@ public class UserService {
                 user.getNumber(), roles);
         ShowEngineerDTO engineer = new ShowEngineerDTO(userDTO,experiences,details);
         return engineer;
+    }
+
+    public List<User> filterUsers(FilterParamsDTO dto){
+        List<User> filtered = userRepository.findAll();
+        if(!dto.firstname.isEmpty()){
+            filtered = userRepository.findAllByFirstname(dto.firstname);
+        }
+        if(!dto.surname.isEmpty()){
+            filtered = userRepository.findAllByLastnameAndUserIn(dto.surname,filtered);
+        }
+        if(!dto.email.isEmpty()){
+            filtered = userRepository.findAllByUsernameAndUserIn(dto.email,filtered);
+        }
+        if(dto.workDate != null){
+            filtered = workOnProjectRepository.findDistinctWorkersByDateWorkingAndUsers(dto.workDate,filtered);
+        }
+        return filtered;
     }
 }
