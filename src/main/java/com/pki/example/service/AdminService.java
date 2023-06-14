@@ -1,12 +1,16 @@
 package com.pki.example.service;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.ExampleApplication;
 import com.pki.example.certificates.CertificateExample;
 import com.pki.example.certificates.CertificateGenerator;
+import com.pki.example.controller.AdminController;
 import com.pki.example.data.Issuer;
 import com.pki.example.data.Subject;
 import com.pki.example.dto.CAandEECertificateDTO;
 import com.pki.example.dto.RootCertificateDTO;
+import com.pki.example.email.model.EmailDetails;
+import com.pki.example.email.service.IEmailService;
 import com.pki.example.keystores.KeyStoreReader;
 import com.pki.example.keystores.KeyStoreWriter;
 import com.pki.example.model.AdminLogins;
@@ -38,9 +42,11 @@ import org.bouncycastle.util.io.pem.PemWriter;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -63,6 +69,9 @@ import java.util.*;
 public class AdminService {
     private static CertificateExample certExample;
 
+    @Autowired
+    private IEmailService emailService;
+
     private static KeyStoreReader keyStoreReader;
 
     private static KeyStoreWriter keyStoreWriter;
@@ -83,6 +92,10 @@ public class AdminService {
 
     @Autowired
     private CRLService crlService = new CRLService();
+
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     public X509Certificate generateCert(String keyStoreFileName,String certificateName,String keyStorePassword,X509Certificate cert,KeyPair keyPair)
     {
@@ -675,11 +688,34 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
     {
 
         User user = userRepository.findOneByUsername(username);
+        logger.info("Block failed: ");
         user.setRefreshToken("");
         user.setBlocked(true);
         userRepository.save(user);
 
         return "Blocked";
+    }
+    public String SendAdminsEmail(String problem)
+    {
+
+        List<User> users = userRepository.findAll();
+        for(User user : users)
+        {
+            for(Role role : user.getRoles()){
+                if(role.getName().equals("\"ROLE_ADMIN\"")){
+                    EmailDetails emailDetails = new EmailDetails();
+                    emailDetails.setMsgBody("Critical!<br/>" +
+                            "Critical:" + "there are suspicious actions on application: " + problem + "</h2> <br/>");
+                    emailDetails.setSubject("Welcome email");
+                    emailDetails.setRecipient(user.getUsername());
+                    emailService.sendWelcomeMail(emailDetails);
+
+                }
+            }
+
+        }
+
+        return "Email sent";
     }
     public List<User> GetAllRegisterRequests()
     {

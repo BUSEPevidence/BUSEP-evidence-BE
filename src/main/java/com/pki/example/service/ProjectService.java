@@ -1,6 +1,8 @@
 package com.pki.example.service;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
+import com.pki.example.controller.AdminController;
 import com.pki.example.dto.ProjectDTO;
 import com.pki.example.dto.UpdateProjectDTO;
 import com.pki.example.model.Project;
@@ -9,6 +11,9 @@ import com.pki.example.model.WorkingOnProject;
 import com.pki.example.repo.ProjectRepository;
 import com.pki.example.repo.WorkOnProjectRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,6 +28,10 @@ public class ProjectService {
     private final WorkOnProjectRepository workOnProjectRepository;
     private final AuthenticationService authService;
 
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
+
 
     public void createProject(ProjectDTO request) {
         Project project = new Project(request.title,request.description,request.startTime,request.endTime);
@@ -31,6 +40,7 @@ public class ProjectService {
 
     public void updateProject(UpdateProjectDTO request) {
         Optional<Project> project = projectRepository.findById(request.projectId);
+        if(project == null)logger.info("Update project failed: ");
         if(project.get() != null){
             project.get().setTitle(request.title);
             project.get().setDescription(request.description);

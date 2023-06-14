@@ -1,6 +1,8 @@
 package com.pki.example.auth;
 
 
+import ch.qos.logback.classic.Logger;
+import com.pki.example.controller.AdminController;
 import com.pki.example.dto.NewPasswordDTO;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
@@ -8,7 +10,10 @@ import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.*;
+import com.pki.example.service.AdminService;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,6 +49,10 @@ public class AuthenticationService {
     private AdminRepository adminRepository;
     @Autowired
     private EngineersDetsRepository detsRepository;
+    @Autowired
+    private AdminService adminService;
+
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
 
 
@@ -154,6 +163,7 @@ public class AuthenticationService {
                 userRepository.save(user);
                 return user;
         }
+        logger.info("Register failed: ");
         return null;
     }
 
@@ -207,7 +217,8 @@ public class AuthenticationService {
         magicLink.setUsed(true);
         magicLinkRepository.save(magicLink);
     }
-
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
@@ -230,6 +241,10 @@ public class AuthenticationService {
         }
 
         System.out.println("Proso salt usera");
+        if(user == null)
+            simpMessagingTemplate.convertAndSend("/topic/notification","Failed login with username: " + request.getUsername());
+            adminService.SendAdminsEmail("Failed login with username: " + request.getUsername());
+            logger.info("Login failed: " + request.getUsername());
         System.out.println(user.getUsername() + " " + user.getFirstname());
         var jwtToken = "";
         String refreshToken = "";
@@ -270,6 +285,7 @@ public class AuthenticationService {
 
     public User approve(String request,boolean check) throws NoSuchAlgorithmException {
         User user = userRepository.findByActivationCode(request);
+        if(user == null) logger.info("Approve failed: ");
         if(check)
         {
             Date currentDate = new Date();
@@ -294,26 +310,31 @@ public class AuthenticationService {
         System.out.println(newDate);
         DenialRequests dr = new DenialRequests(request,newDate);
         User user = userRepository.findOneByUsername(request);
+        if(user == null) logger.info("Denie failed: ");
         denialRequestsRepository.save(dr);
         userRepository.delete(user);
         return null;
     }
     public User getUser(RegisterRequest request) throws NoSuchAlgorithmException {
         User user = userRepository.findOneByUsername(request.getUsername());
+        if(user == null) logger.info("Get user failed: ");
         return user;
     }
     public User getUserByUsername(String request) throws NoSuchAlgorithmException {
         User user = userRepository.findOneByUsername(request);
+        if(user == null) logger.info("Get user by username failed: ");
         return user;
     }
     public User getUserByCode(String request) throws NoSuchAlgorithmException {
         User user = userRepository.findOneByUsername(request);
+        if(user == null) logger.info("Get user by code failed: ");
 
         return user;
     }
 
     public void updateEngineer(UpdateEngineerDTO informations) throws NoSuchAlgorithmException {
         User user = getCurrentUser();
+        if(user == null)logger.info("Update engineer failed");
         user.setFirstname(informations.firstname);
         user.setLastname(informations.lastname);
         user.setAddress(informations.address);
@@ -342,8 +363,10 @@ public class AuthenticationService {
             user.setCity(informations.city);
             user.setState(informations.state);
             userRepository.save(user);
-        }else
-        throw new Error("Username already exists");
+        }else {
+            logger.info("Update user failed");
+            throw new Error("Username already exists");
+        }
     }
 
     public void changePassword(User user, NewPasswordDTO dto) throws NoSuchAlgorithmException {
@@ -363,6 +386,7 @@ public class AuthenticationService {
             }
             userRepository.save(user);
         }else{
+            logger.info("Change password failed: ");
             throw new Error("wrong current password");
         }
     }

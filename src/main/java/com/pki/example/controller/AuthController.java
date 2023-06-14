@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
@@ -63,14 +64,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequest request) throws NoSuchAlgorithmException {
+    public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequest request, HttpServletRequest req) throws NoSuchAlgorithmException {
         AuthenticationResponse authenticationResponse = authenticationService.authenticate(request);
         String token = authenticationResponse.getToken();
         String refreshToken = authenticationResponse.getRefreshToken();
-        System.out.println(request.getUsername() + " " + request.getPassword());
-        logger.info("Ovo je informacija koju želite da logujete.");
-        simpMessagingTemplate.convertAndSend("/topic/notification","Poruka");
         if (!token.equals("")) {
+            logger.info("Success login with username: " + request.getUsername() + " , IpAddress:" + req.getRemoteAddr());
             return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");

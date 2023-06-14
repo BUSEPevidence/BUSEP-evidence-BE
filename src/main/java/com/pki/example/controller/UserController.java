@@ -1,5 +1,6 @@
 package com.pki.example.controller;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
 import com.pki.example.email.model.EmailDetails;
@@ -11,7 +12,10 @@ import com.pki.example.service.UserService;
 import com.pki.example.uploader.FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +38,10 @@ public class UserController {
     private final AuthenticationService authService;
     private final FileUploadService uploadService;
     private final IEmailService emailService;
+
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     @PreAuthorize("hasAuthority('ALL_WORKERS')")
     @GetMapping("/all-workers")
@@ -98,6 +106,7 @@ public class UserController {
     @GetMapping("/user")
     public ResponseEntity<User> getUser() {
         User user = authService.getCurrentUser();
+        if(user == null)logger.info("Update engineer failed");
         return ResponseEntity.ok(user);
     }
 
@@ -105,7 +114,9 @@ public class UserController {
     @GetMapping("/engineer")
     public ResponseEntity<ShowEngineerDTO> getEngineer() {
         User user = authService.getCurrentUser();
+        if(user == null)logger.info("Update engineer failed");
         ShowEngineerDTO engInfo = userService.getAllEngineerInfo(user);
+        if(engInfo == null)logger.info("Update engineer failed");
         return ResponseEntity.ok(engInfo);
     }
 
@@ -114,6 +125,7 @@ public class UserController {
     public ResponseEntity<String> changePassword(@RequestBody
                             NewPasswordDTO dto) throws NoSuchAlgorithmException {
         User user = authService.getCurrentUser();
+        if(user == null)logger.info("Update engineer failed");
         authService.changePassword(user,dto);
         return ResponseEntity.ok("Successfully updated password");
     }
@@ -122,7 +134,9 @@ public class UserController {
     @PutMapping("/engineer/upload")
     public ResponseEntity<String> uploadCV(@RequestParam("file") MultipartFile file) throws IOException {
         String url = uploadService.uploadFile(file);
+        if(url == null)logger.info("Upload cw failed");
         User user = authService.getCurrentUser();
+        if(user == null)logger.info("Upload cw failed");
         userService.uploadCv(user, url);
         return ResponseEntity.ok("Successfully uploaded CV");
     }
@@ -131,6 +145,7 @@ public class UserController {
     @PutMapping("/engineer/experience")
     public ResponseEntity<String> addExperience(@RequestBody ExperienceDTO exp) {
         User user = authService.getCurrentUser();
+        if(user == null)logger.info("Engineer exp failed");
         userService.addExperience(user, exp);
         return ResponseEntity.ok("Successfully added experience");
     }

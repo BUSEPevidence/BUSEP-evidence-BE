@@ -1,5 +1,6 @@
 package com.pki.example.controller;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
 import com.pki.example.model.Project;
@@ -11,7 +12,10 @@ import com.pki.example.repo.UserRepository;
 import com.pki.example.service.ProjectService;
 import com.pki.example.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +34,10 @@ public class ProjectController {
     private final AuthenticationService authService;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     @PreAuthorize("hasAuthority('ALL_PROJECTS')")
     @GetMapping("")
@@ -51,6 +59,7 @@ public class ProjectController {
                            @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Has to be in the form of an email")
                            String username) {
         User worker = userRepository.findOneByUsername(username);
+        if(worker == null)logger.info("Get worker projects failed: ");
         List<WorkingOnProject> projects = projectService.getAllUserProjects(worker);
         return getListToShow(projects);
     }
@@ -60,7 +69,9 @@ public class ProjectController {
     public Object getProject(@RequestParam int id) {
         Optional<Project> project = projectRepository.findById(id);
         if(project.isEmpty()){
+            logger.info("Get project failed: ");
             throw new Error("No such project");
+
         }
         return ResponseEntity.ok(project.get());
     }
@@ -70,6 +81,7 @@ public class ProjectController {
     public ResponseEntity<List<ShowUserDTO>> getProjectActiveWorkers(@RequestParam int projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
+            logger.info("Get active workers failed, no such project: ");
             throw new Error("No such project");
         }
         List<User> activeWorkers = projectService.getAllActiveProjectWorkers(project.get());
@@ -93,7 +105,9 @@ public class ProjectController {
     public ResponseEntity<List<ShowUserDTO>> getProjectNonWorkers(@RequestParam int projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
+            logger.info("No such project: ");
             throw new Error("No such project");
+
         }
         List<User> nonActiveWorkers = userService.getWorkersNotOnProject(project.get());
         List<ShowUserDTO> workersRet = new ArrayList<>();
@@ -133,7 +147,9 @@ public class ProjectController {
     @PostMapping("/add-worker")
     public ResponseEntity<String> addWorkerToProject(@RequestBody AddWorkerToProjectDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
+        if(project == null)logger.info("Add worker to projet fail, no such project ");
         User user = userRepository.findOneByUsername(dto.username);
+        if(user == null)logger.info("Add worker to projet fail, no such user ");
         if(project.isEmpty()){
             throw new Error("No such project");
         }
@@ -145,6 +161,7 @@ public class ProjectController {
     @PutMapping("/remove-worker")
     public ResponseEntity<String> removeWorkerFromProject(@RequestBody RemoveWorkerDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
+        if(project == null)logger.info("Remove worker fail, no such project ");
         User user = userRepository.findOneByUsername(dto.username);
         if(project.isEmpty()){
             throw new Error("No such project");
@@ -158,6 +175,7 @@ public class ProjectController {
     public ResponseEntity<String> editWorkersTaskOnProject(@RequestBody UpdateWorkerTaskDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
         if(project.isEmpty()){
+            logger.info("Update work fail ");
             throw new Error("No such project");
         }
         projectService.changeDescriptionOnProjectWork(project.get(),dto.task);
@@ -169,6 +187,7 @@ public class ProjectController {
     @GetMapping("/past-projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkersProjects() {
         User user = authService.getCurrentUser();
+        if(user == null)logger.info("Get worker projects fail");
         List<WorkingOnProject> projects = projectService.getAllUserProjects(user);
         return getListToShow(projects);
     }
@@ -177,6 +196,7 @@ public class ProjectController {
     @GetMapping("/active-projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkersActiveProjects() {
         User user = authService.getCurrentUser();
+        if(null == null)logger.info("Get active projects fail");
         List<WorkingOnProject> projects = projectService.getAllActiveUserProjects(user);
         return getListToShow(projects);
     }
@@ -198,6 +218,7 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(dto.projectId);
         System.out.println(project.get());
         if(project.isEmpty()){
+            logger.info("Experience fail");
             throw new Error("No such project");
         }
         User user = authService.getCurrentUser();
@@ -210,6 +231,7 @@ public class ProjectController {
     public ResponseEntity<List<ShowUserDTO>> projectWorkers(@RequestParam Integer projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
+            logger.info("Workers fail ");
             throw new Error("No such project");
         }
         List<User> users = projectService.getAllProjectWorkers(project.get());
@@ -232,6 +254,7 @@ public class ProjectController {
     public ResponseEntity<List<ShowWorkOnProjectWithDatesDTO>> projectWorkersWithDates(@RequestParam Integer projectId) {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
+            logger.info("Workers with dates failed");
             throw new Error("No such project");
         }
         List<User> users = projectService.getAllProjectWorkers(project.get());
