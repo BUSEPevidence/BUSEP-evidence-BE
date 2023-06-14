@@ -241,11 +241,11 @@ public class AuthenticationService {
         }
 
         System.out.println("Proso salt usera");
-        if(user == null)
-            simpMessagingTemplate.convertAndSend("/topic/notification","Failed login with username: " + request.getUsername());
+        if(user == null) {
+            simpMessagingTemplate.convertAndSend("/topic/notification", "Failed login with username: " + request.getUsername());
             adminService.SendAdminsEmail("Failed login with username: " + request.getUsername());
             logger.info("Login failed: " + request.getUsername());
-        System.out.println(user.getUsername() + " " + user.getFirstname());
+        }
         var jwtToken = "";
         String refreshToken = "";
 
