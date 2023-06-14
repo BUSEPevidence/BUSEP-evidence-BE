@@ -9,10 +9,11 @@ import com.pki.example.model.*;
 import com.pki.example.repo.UserRepository;
 import com.pki.example.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -34,6 +35,9 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final UserService userService;
     private final UserRepository userRepository;
+
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
     private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     @PostMapping("/register")
@@ -65,6 +69,7 @@ public class AuthController {
         String refreshToken = authenticationResponse.getRefreshToken();
         System.out.println(request.getUsername() + " " + request.getPassword());
         logger.info("Ovo je informacija koju želite da logujete.");
+        simpMessagingTemplate.convertAndSend("/topic/notification","Poruka");
         if (!token.equals("")) {
             return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
         } else {

@@ -27,7 +27,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()		// /api/foo
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/socket/**").permitAll()// /api/foo
                 .anyRequest().authenticated().and()
                 .cors().and()
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
