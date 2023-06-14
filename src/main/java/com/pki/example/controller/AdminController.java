@@ -1,5 +1,6 @@
 package com.pki.example.controller;
 
+import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
 import com.pki.example.keystores.KeyStoreReader;
@@ -10,6 +11,7 @@ import com.pki.example.model.User;
 import com.pki.example.service.AdminService;
 import com.pki.example.service.CRLService;
 import com.pki.example.service.UserService;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -18,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -45,6 +48,10 @@ public class AdminController {
 
     @Autowired
     UserService userService = new UserService();
+
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     private static KeyStoreReader keyStoreReader;
 
@@ -200,6 +207,7 @@ public class AdminController {
     @GetMapping("/first-login")
     public ResponseEntity<String> firstLogin(@RequestParam("id") String id) throws Exception {
         User user = authenticationService.getUserByUsername(id);
+        if(user == null)logger.info("First login failed: ");
         adminService.FlagUp(user.getId());
         return ResponseEntity.ok().body("{\"Result\": \"" + "flag up!" + "\"}");
     }
@@ -261,6 +269,7 @@ public class AdminController {
         }
         else
         {
+            logger.info("Add permission failed: ");
             id = 0;
         }
         id++;
@@ -305,6 +314,7 @@ public class AdminController {
         }
         else
         {
+            logger.info("delete permission failed: ");
             id = 0;
         }
         id++;
