@@ -60,7 +60,10 @@ public class ProjectController {
                            String username) {
         User worker = userRepository.findOneByUsername(username);
         if(worker == null)logger.info("Get worker projects failed: ");
+<<<<<<< HEAD
         if(worker == null)simpMessagingTemplate.convertAndSend("/logger/logg", "Get worker projects failed: ");
+=======
+>>>>>>> 72b8169 (Some loggs added)
         List<WorkingOnProject> projects = projectService.getAllUserProjects(worker);
         return getListToShow(projects);
     }
@@ -71,7 +74,10 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(id);
         if(project.isEmpty()){
             logger.info("Get project failed: ");
+<<<<<<< HEAD
             simpMessagingTemplate.convertAndSend("/logger/logg", "Get project failed: ");
+=======
+>>>>>>> 72b8169 (Some loggs added)
             throw new Error("No such project");
 
         }
@@ -84,7 +90,10 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("Get active workers failed, no such project: ");
+<<<<<<< HEAD
             simpMessagingTemplate.convertAndSend("/logger/logg", "Get project failed: ");
+=======
+>>>>>>> 72b8169 (Some loggs added)
             throw new Error("No such project");
         }
         List<User> activeWorkers = projectService.getAllActiveProjectWorkers(project.get());
@@ -109,7 +118,10 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("No such project: ");
+<<<<<<< HEAD
             simpMessagingTemplate.convertAndSend("/logger/logg", "Get project failed: ");
+=======
+>>>>>>> 72b8169 (Some loggs added)
             throw new Error("No such project");
 
         }
@@ -151,6 +163,7 @@ public class ProjectController {
     @PostMapping("/add-worker")
     public ResponseEntity<String> addWorkerToProject(@RequestBody AddWorkerToProjectDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
+<<<<<<< HEAD
         if(project == null)
         {
             logger.info("Add worker to projet fail, no such project ");
@@ -162,6 +175,11 @@ public class ProjectController {
             logger.info("Add worker to projet fail, no such user ");
             simpMessagingTemplate.convertAndSend("/logger/logg", "Add worker to projet fail, no such user");
         }
+=======
+        if(project == null)logger.info("Add worker to projet fail, no such project ");
+        User user = userRepository.findOneByUsername(dto.username);
+        if(user == null)logger.info("Add worker to projet fail, no such user ");
+>>>>>>> 72b8169 (Some loggs added)
         if(project.isEmpty()){
             throw new Error("No such project");
         }
@@ -173,11 +191,15 @@ public class ProjectController {
     @PutMapping("/remove-worker")
     public ResponseEntity<String> removeWorkerFromProject(@RequestBody RemoveWorkerDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
+<<<<<<< HEAD
         if(project == null)
         {
             logger.info("Remove worker fail, no such project ");
             simpMessagingTemplate.convertAndSend("/logger/logg", "Remove worker fail, no such project");
         }
+=======
+        if(project == null)logger.info("Remove worker fail, no such project ");
+>>>>>>> 72b8169 (Some loggs added)
         User user = userRepository.findOneByUsername(dto.username);
         if(project.isEmpty()){
             throw new Error("No such project");
@@ -192,7 +214,10 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(dto.projectId);
         if(project.isEmpty()){
             logger.info("Update work fail ");
+<<<<<<< HEAD
             simpMessagingTemplate.convertAndSend("/logger/logg", "Update work");
+=======
+>>>>>>> 72b8169 (Some loggs added)
             throw new Error("No such project");
         }
         projectService.changeDescriptionOnProjectWork(project.get(),dto.task);
@@ -204,11 +229,15 @@ public class ProjectController {
     @GetMapping("/past-projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkersProjects() {
         User user = authService.getCurrentUser();
+<<<<<<< HEAD
         if(user == null)
         {
             logger.info("Get worker projects fail");
             simpMessagingTemplate.convertAndSend("/logger/logg", "Get worker projects fail");
         }
+=======
+        if(user == null)logger.info("Get worker projects fail");
+>>>>>>> 72b8169 (Some loggs added)
         List<WorkingOnProject> projects = projectService.getAllUserProjects(user);
         return getListToShow(projects);
     }
@@ -217,11 +246,15 @@ public class ProjectController {
     @GetMapping("/active-projects")
     public ResponseEntity<List<ShowWorkOnProjectDTO>> getWorkersActiveProjects() {
         User user = authService.getCurrentUser();
+<<<<<<< HEAD
         if(null == null)
         {
             logger.info("Get active projects fail");
             simpMessagingTemplate.convertAndSend("/logger/logg", "Get active projects fail");
         }
+=======
+        if(null == null)logger.info("Get active projects fail");
+>>>>>>> 72b8169 (Some loggs added)
         List<WorkingOnProject> projects = projectService.getAllActiveUserProjects(user);
         return getListToShow(projects);
     }
@@ -258,7 +291,10 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("Workers fail ");
+<<<<<<< HEAD
             simpMessagingTemplate.convertAndSend("/logger/logg", "Workers fail");
+=======
+>>>>>>> 72b8169 (Some loggs added)
             throw new Error("No such project");
         }
         List<User> users = projectService.getAllProjectWorkers(project.get());
@@ -282,7 +318,10 @@ public class ProjectController {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("Workers with dates failed");
+<<<<<<< HEAD
             simpMessagingTemplate.convertAndSend("/logger/logg", "Workers with dates failed");
+=======
+>>>>>>> 72b8169 (Some loggs added)
             throw new Error("No such project");
         }
         List<User> users = projectService.getAllProjectWorkers(project.get());

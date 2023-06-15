@@ -68,9 +68,6 @@ public class AuthController {
         AuthenticationResponse authenticationResponse = authenticationService.authenticate(request);
         String token = authenticationResponse.getToken();
         String refreshToken = authenticationResponse.getRefreshToken();
-        System.out.println(request.getUsername() + " " + request.getPassword());
-        logger.info("Ovo je informacija koju želite da logujete.");
-        simpMessagingTemplate.convertAndSend("/topic/notification","Poruka");
         if (!token.equals("")) {
             logger.info("Success login with username: " + request.getUsername() + " , IpAddress:" + req.getRemoteAddr());
             simpMessagingTemplate.convertAndSend("/logger/logg", "Success login with username: " + request.getUsername() + " , IpAddress:" + req.getRemoteAddr());
