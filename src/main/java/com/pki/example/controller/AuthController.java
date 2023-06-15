@@ -70,6 +70,7 @@ public class AuthController {
         String refreshToken = authenticationResponse.getRefreshToken();
         if (!token.equals("")) {
             logger.info("Success login with username: " + request.getUsername() + " , IpAddress:" + req.getRemoteAddr());
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Success login with username: " + request.getUsername() + " , IpAddress:" + req.getRemoteAddr());
             return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
