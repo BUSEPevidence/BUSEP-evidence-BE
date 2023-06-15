@@ -207,7 +207,11 @@ public class AdminController {
     @GetMapping("/first-login")
     public ResponseEntity<String> firstLogin(@RequestParam("id") String id) throws Exception {
         User user = authenticationService.getUserByUsername(id);
-        if(user == null)logger.info("First login failed: ");
+        if(user == null)
+        {
+            logger.info("First login failed: ");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "First login failed:");
+        }
         adminService.FlagUp(user.getId());
         return ResponseEntity.ok().body("{\"Result\": \"" + "flag up!" + "\"}");
     }
@@ -270,6 +274,7 @@ public class AdminController {
         else
         {
             logger.info("Add permission failed: ");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Add permission failed:");
             id = 0;
         }
         id++;
@@ -314,6 +319,7 @@ public class AdminController {
         }
         else
         {
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Delete permission failed:");
             logger.info("delete permission failed: ");
             id = 0;
         }
