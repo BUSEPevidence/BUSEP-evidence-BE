@@ -115,6 +115,12 @@ public class AuthenticationService {
                 userRepository.save(user);
                 return user;
             }
+            else
+            {
+                simpMessagingTemplate.convertAndSend("/topic/notification", "Register try with blocked email: " + request.getUsername());
+                adminService.SendAdminsEmail("Failed login with username: " + request.getUsername());
+                logger.info("Login failed: " + request.getUsername());
+            }
         }
         else {
             String salt = generateSalt();
