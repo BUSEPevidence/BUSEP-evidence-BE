@@ -106,7 +106,11 @@ public class UserController {
     @GetMapping("/user")
     public ResponseEntity<User> getUser() {
         User user = authService.getCurrentUser();
-        if(user == null)logger.info("Update engineer failed");
+        if(user == null)
+        {
+            logger.info("Update engineer failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Update engineer failed");
+        }
         return ResponseEntity.ok(user);
     }
 
@@ -114,9 +118,17 @@ public class UserController {
     @GetMapping("/engineer")
     public ResponseEntity<ShowEngineerDTO> getEngineer() {
         User user = authService.getCurrentUser();
-        if(user == null)logger.info("Update engineer failed");
+        if(user == null)
+        {
+            logger.info("Get engineer failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Get engineer failed");
+        }
         ShowEngineerDTO engInfo = userService.getAllEngineerInfo(user);
-        if(engInfo == null)logger.info("Update engineer failed");
+        if(engInfo == null)
+        {
+            logger.info("Get engineer failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Get engineer failed");
+        }
         return ResponseEntity.ok(engInfo);
     }
 
@@ -125,7 +137,11 @@ public class UserController {
     public ResponseEntity<String> changePassword(@RequestBody
                             NewPasswordDTO dto) throws NoSuchAlgorithmException {
         User user = authService.getCurrentUser();
-        if(user == null)logger.info("Update engineer failed");
+        if(user == null)
+        {
+            logger.info("Update engineer failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Change password failed");
+        }
         authService.changePassword(user,dto);
         return ResponseEntity.ok("Successfully updated password");
     }
@@ -134,9 +150,17 @@ public class UserController {
     @PutMapping("/engineer/upload")
     public ResponseEntity<String> uploadCV(@RequestParam("file") MultipartFile file) throws IOException {
         String url = uploadService.uploadFile(file);
-        if(url == null)logger.info("Upload cw failed");
+        if(url == null)
+        {
+            logger.info("Upload cw failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Upload cw failed");
+        }
         User user = authService.getCurrentUser();
-        if(user == null)logger.info("Upload cw failed");
+        if(user == null)
+        {
+            logger.info("Upload cw failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Upload cw failed");
+        }
         userService.uploadCv(user, url);
         return ResponseEntity.ok("Successfully uploaded CV");
     }
@@ -145,7 +169,11 @@ public class UserController {
     @PutMapping("/engineer/experience")
     public ResponseEntity<String> addExperience(@RequestBody ExperienceDTO exp) {
         User user = authService.getCurrentUser();
-        if(user == null)logger.info("Engineer exp failed");
+        if(user == null)
+        {
+            logger.info("Engineer exp failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Engineer exp failed");
+        }
         userService.addExperience(user, exp);
         return ResponseEntity.ok("Successfully added experience");
     }

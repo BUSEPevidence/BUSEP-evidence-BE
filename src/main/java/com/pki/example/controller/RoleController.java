@@ -38,9 +38,17 @@ public class RoleController {
     {
         System.out.println(rolePermissionDTO.getRole() + " " + rolePermissionDTO.getPermission());
         Role role = roleService.findRoleByName(rolePermissionDTO.getRole());
-        if(role == null)logger.info("Add permission failed");
+        if(role == null)
+        {
+            logger.info("Add permission failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Add permission failed");
+        }
         Permission permission = permissionService.findPermissionByName(rolePermissionDTO.getPermission());
-        if(permission == null)logger.info("Add permission failed");
+        if(permission == null)
+        {
+            logger.info("Add permission failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Add permission failed");
+        }
         System.out.println("rola je: " + role.getName() + " " + role.getId());
         System.out.println("permisija je: " + permission.getName() + " " + permission.getId());
         List<Permission> roles = role.getPermissions();
@@ -58,9 +66,17 @@ public class RoleController {
     public ResponseEntity<String> deletePermission(@RequestBody RolePermissionDTO rolePermissionDTO)
     {
         Role role = roleService.findRoleByName(rolePermissionDTO.getRole());
-        if(role == null)logger.info("Delete permission failed");
+        if(role == null)
+        {
+            logger.info("Delete permission failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Delete permission failed");
+        }
         Permission permission = permissionService.findPermissionByName(rolePermissionDTO.getPermission());
-        if(permission == null)logger.info("Delete permission failed");
+        if(permission == null)
+        {
+            logger.info("Delete permission failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Delete permission failed");
+        }
         List<Permission> roles = role.getPermissions();
         List<Permission> perms = new ArrayList<>();
         for(Permission perm : roles)
