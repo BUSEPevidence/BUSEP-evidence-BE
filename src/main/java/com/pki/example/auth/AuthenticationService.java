@@ -247,7 +247,6 @@ public class AuthenticationService {
         }
 
         System.out.println("Proso salt usera");
-
         if(user == null) {
             simpMessagingTemplate.convertAndSend("/topic/notification", "Failed login with username: " + request.getUsername());
             adminService.SendAdminsEmail("Failed login with username: " + request.getUsername());
