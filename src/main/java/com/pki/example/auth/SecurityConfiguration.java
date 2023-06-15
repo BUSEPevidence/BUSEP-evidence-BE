@@ -29,6 +29,7 @@ public class SecurityConfiguration {
         http.authorizeRequests()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers("/socket/**").permitAll()// /api/foo
+                .antMatchers("/logSocket/**").permitAll()// /api/foo
                 .anyRequest().authenticated().and()
                 .cors().and()
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

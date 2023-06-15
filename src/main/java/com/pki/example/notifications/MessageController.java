@@ -17,6 +17,11 @@ public class MessageController {
         return notification;
     }
 
+    @SendTo("/logger/logg")
+    public String sendLogg(String logg){
+        return logg;
+    }
+
 
 
 }
