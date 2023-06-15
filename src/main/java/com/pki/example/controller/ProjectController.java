@@ -153,7 +153,8 @@ public class ProjectController {
     @PostMapping("/add-worker")
     public ResponseEntity<String> addWorkerToProject(@RequestBody AddWorkerToProjectDTO dto) {
         Optional<Project> project = projectRepository.findById(dto.projectId);
-        if(project == null) {
+        if(project == null)
+        {
             logger.info("Add worker to projet fail, no such project ");
             simpMessagingTemplate.convertAndSend("/logger/logg", "Add worker to projet fail, no such project : ");
         }
@@ -163,7 +164,6 @@ public class ProjectController {
             logger.info("Add worker to projet fail, no such user ");
             simpMessagingTemplate.convertAndSend("/logger/logg", "Add worker to projet fail, no such user");
         }
-        if(project == null)logger.info("Add worker to projet fail, no such project ");
         if(project.isEmpty()){
             throw new Error("No such project");
         }
