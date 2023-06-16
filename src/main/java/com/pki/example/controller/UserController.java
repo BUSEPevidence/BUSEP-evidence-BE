@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -63,6 +65,9 @@ public class UserController {
         return ResponseEntity.ok(workersRet);
     }
 
+    @Caching(evict = {
+            @CacheEvict(allEntries = true)
+    })
     //@PreAuthorize("hasAuthority('PDF')")
     @GetMapping("/pdf")
     public ResponseEntity<Resource> servePDF() throws IOException {
@@ -97,6 +102,9 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @Caching(evict = {
+            @CacheEvict(allEntries = true)
+    })
     @PreAuthorize("hasAuthority('ENGINEER_INFO_MANAGED')")
     @GetMapping("/engineer-info")
     public ResponseEntity<ShowEngineerDTO> getEngineerInfo(@RequestParam
@@ -114,6 +122,9 @@ public class UserController {
         return ResponseEntity.ok("Successfully updated user profile");
     }
 
+    @Caching(evict = {
+            @CacheEvict(allEntries = true)
+    })
     @PreAuthorize("hasAuthority('UPDATE_ENGINEER')")
     @PutMapping("/engineer")
     public ResponseEntity<String> updateEngineer(@RequestBody UpdateEngineerDTO dto) throws NoSuchAlgorithmException {
@@ -134,6 +145,9 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @Caching(evict = {
+            @CacheEvict(allEntries = true)
+    })
     @PreAuthorize("hasAuthority('LOGGED_ENGINEER')")
     @GetMapping("/engineer")
     public ResponseEntity<ShowEngineerDTO> getEngineer() throws Exception {

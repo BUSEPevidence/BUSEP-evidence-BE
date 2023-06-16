@@ -15,7 +15,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -82,7 +82,8 @@ public class FileUploadService {
         // Save the decrypted file
         Path savePath = Path.of("src/main/resources/Cv.pdf");
         try (InputStream inputStream = new ByteArrayInputStream(decryptedData)) {
-            Files.copy(inputStream, savePath, StandardCopyOption.REPLACE_EXISTING);
+            Files.write(savePath, decryptedData, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Thread.sleep(2000);
         }
     }
 
