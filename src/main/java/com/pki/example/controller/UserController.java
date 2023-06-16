@@ -3,9 +3,9 @@ package com.pki.example.controller;
 import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.dto.*;
-import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.Role;
+import com.pki.example.model.UploadResult;
 import com.pki.example.model.User;
 import com.pki.example.repo.UserRepository;
 import com.pki.example.service.UserService;
@@ -14,6 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,10 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.Pattern;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 @RestController
@@ -61,6 +63,24 @@ public class UserController {
         return ResponseEntity.ok(workersRet);
     }
 
+    //@PreAuthorize("hasAuthority('PDF')")
+    @GetMapping("/pdf")
+    public ResponseEntity<Resource> servePDF() throws IOException {
+        Resource resource = new ClassPathResource("Cv.pdf"); // Specify the path to your PDF file
+
+        if (resource.exists()) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Cv.pdf"); // Set the desired filename
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PreAuthorize("hasAuthority('WORKER_INFO_MANAGED')")
     @GetMapping("/worker-info")
     public ResponseEntity<ShowUserDTO> getWorkerInfo(@RequestParam
@@ -81,7 +101,7 @@ public class UserController {
     @GetMapping("/engineer-info")
     public ResponseEntity<ShowEngineerDTO> getEngineerInfo(@RequestParam
                        @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Has to be in the form of an email")
-                       String username) {
+                       String username) throws Exception {
         User worker = userRepository.findOneByUsername(username);
         ShowEngineerDTO engineer = userService.getAllEngineerInfo(worker);
         return ResponseEntity.ok(engineer);
@@ -116,7 +136,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('LOGGED_ENGINEER')")
     @GetMapping("/engineer")
-    public ResponseEntity<ShowEngineerDTO> getEngineer() {
+    public ResponseEntity<ShowEngineerDTO> getEngineer() throws Exception {
         User user = authService.getCurrentUser();
         if(user == null)
         {
@@ -148,8 +168,8 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('UPLOAD_CV')")
     @PutMapping("/engineer/upload")
-    public ResponseEntity<String> uploadCV(@RequestParam("file") MultipartFile file) throws IOException {
-        String url = uploadService.uploadFile(file);
+    public ResponseEntity<String> uploadCV(@RequestParam("file") MultipartFile file) throws Exception {
+        UploadResult url = uploadService.uploadFile(file);
         if(url == null)
         {
             logger.info("Upload cw failed");

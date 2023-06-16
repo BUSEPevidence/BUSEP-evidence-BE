@@ -70,9 +70,10 @@ public class UserService {
         return false;
     }
 
-    public void uploadCv(User user, String url){
+    public void uploadCv(User user, UploadResult url){
        EngineerDetails engdet = engineersDetsRepository.findDistinctByUser(user);
-       engdet.setCvUrl(url);
+       engdet.setCvUrl(url.getBlobName());
+        engdet.setEncKey(url.getKey());
        engineersDetsRepository.save(engdet);
     }
     public static String hashPassword(String password, String salt) throws NoSuchAlgorithmException {
@@ -95,14 +96,15 @@ public class UserService {
         engineersDetsRepository.save(engdet);
     }
 
-    public ShowEngineerDTO getAllEngineerInfo(User user){
+    public ShowEngineerDTO getAllEngineerInfo(User user) throws Exception {
         EngineerDetails engDet = engineersDetsRepository.findDistinctByUser(user);
         List<Experience> exp = experienceRepository.findAllByUser(user);
-        String url = "";
-        if(engDet.getCvUrl() != null){
-            url = fileUploadService.downloadFile(engDet.getCvUrl());
+        boolean cv = false;
+        if (engDet.getCvUrl() != null) {
+            fileUploadService.downloadFiles(engDet.getCvUrl(), engDet.getEncKey());
+            cv = true;
         }
-        ShowEngineerDetailsDTO details = new ShowEngineerDetailsDTO(engDet.getSeniority().toString(),url);
+        ShowEngineerDetailsDTO details = new ShowEngineerDetailsDTO(engDet.getSeniority().toString(),cv);
         List<ShowExperienceDTO> experiences = new ArrayList<>();
         for(Experience ex : exp){
             ShowExperienceDTO experienceDTO = new ShowExperienceDTO(ex.getId(),ex.getTitle(),ex.getGrade());
@@ -135,4 +137,6 @@ public class UserService {
         }
         return filtered;
     }
+
+
 }

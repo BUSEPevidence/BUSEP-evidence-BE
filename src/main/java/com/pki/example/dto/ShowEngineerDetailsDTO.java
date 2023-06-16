@@ -7,5 +7,5 @@ public class ShowEngineerDetailsDTO {
 
     public String seniority;
 
-    public String CvUrl;
+    public boolean CvUrl;
 }
