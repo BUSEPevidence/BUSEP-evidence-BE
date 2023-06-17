@@ -19,6 +19,7 @@ public class EngineerDetails {
 
     private String CvUrl;
 
+    private String encKey;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @MapsId

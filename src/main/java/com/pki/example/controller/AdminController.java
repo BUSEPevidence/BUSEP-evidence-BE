@@ -13,22 +13,16 @@ import com.pki.example.service.CRLService;
 import com.pki.example.service.UserService;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -228,6 +222,7 @@ public class AdminController {
         return ResponseEntity.ok().body("{\"Result\": \"" + "password changed!" + "\"}");
     }
 
+    @PreAuthorize("hasAuthority('BLOCK')")
     @PostMapping("/block")
     public ResponseEntity<String> blockUser(@RequestParam("username") String username) throws Exception {
         adminService.BlockUser(username);
