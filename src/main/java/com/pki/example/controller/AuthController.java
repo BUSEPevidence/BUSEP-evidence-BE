@@ -19,7 +19,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.servlet.http.HttpServletRequest;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +46,7 @@ public class AuthController {
     private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterRequest> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException {
+    public ResponseEntity<RegisterRequest> register(@RequestBody RegisterRequest request) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         ResponseEntity.ok(authenticationService.register(request));
         return ResponseEntity.ok(request);
     }
@@ -93,6 +97,9 @@ public class AuthController {
         AuthenticationResponse authenticationResponse = authenticationService.generateNewTokenPair(user);
         String token = authenticationResponse.getToken();
         String refreshToken = authenticationResponse.getRefreshToken();
+        logger.info("Success login with magiclink: " + username);
+        simpMessagingTemplate.convertAndSend("/logger/logg", "Success login with username: " + username);
+
         return ResponseEntity.ok().body("{\"token\": \"" + token + "\", \"refreshToken\": \"" + refreshToken +"\"}");
     }
 
@@ -121,9 +128,18 @@ public class AuthController {
         emailDetails.setRecipient(retUser.getUsername());
         emailService.sendWelcomeMail(emailDetails);
         if(retUser != null)
+        {
+            logger.info("Approved registration for : " + request.getUsername());
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Approved registration for : " + request.getUsername());
             return ResponseEntity.ok("{\"Message\": \"" + "Email sent" + "\"}");
-        else
+
+        }
+
+        else {
+            logger.info("Failed approving registration for : " + request.getUsername());
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Failed approving registration for : " + request.getUsername());
             return ResponseEntity.ok("{\"Message\": \"" + "User not found" + "\"}");
+        }
     }
 
     @PreAuthorize("hasAuthority('DENIE')")

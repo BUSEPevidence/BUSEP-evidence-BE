@@ -13,13 +13,27 @@ import com.pki.example.repo.WorkOnProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+
+import static org.postgresql.shaded.com.ongres.scram.common.ScramStringFormatting.base64Decode;
+import static org.postgresql.shaded.com.ongres.scram.common.ScramStringFormatting.base64Encode;
+
 @RequiredArgsConstructor
 @Service
 public class ProjectService {
@@ -31,6 +45,122 @@ public class ProjectService {
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
     private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
+
+    @Value("${custom.nameKey}")
+    String nameKey;
+
+    @Value("${custom.surnameKey}")
+    String surnameKey;
+
+    @Value("${custom.addressKey}")
+    String addressKey;
+
+    @Value("${custom.phoneKey}")
+    String phoneKey;
+
+
+    public User encryptUser(User user) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String keyString = nameKey;
+        byte[] bytes = keyString.getBytes(StandardCharsets.UTF_8);
+        Key namKey = new SecretKeySpec(bytes, "AES");
+
+        String surKey = surnameKey;
+        byte[] surByt = surKey.getBytes(StandardCharsets.UTF_8);
+        Key surnKey = new SecretKeySpec(surByt, "AES");
+
+        String addrKey = addressKey;
+        byte[] addByt = addrKey.getBytes(StandardCharsets.UTF_8);
+        Key addKey = new SecretKeySpec(addByt, "AES");
+
+        String phoKey = phoneKey;
+        byte[] phoByt = phoKey.getBytes(StandardCharsets.UTF_8);
+        Key phoneKey = new SecretKeySpec(phoByt, "AES");
+
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, namKey);
+        byte[] EncryptedString = cipher.doFinal(user.getFirstname().getBytes(StandardCharsets.UTF_8));
+        String encryptedName = base64Encode(EncryptedString);
+        user.setFirstname(encryptedName);
+
+        Cipher cipherr = Cipher.getInstance("AES");
+        cipherr.init(Cipher.ENCRYPT_MODE, surnKey);
+        byte[] EncBytSur = cipherr.doFinal(user.getLastname().getBytes(StandardCharsets.UTF_8));
+        String encSurname = base64Encode(EncBytSur);
+        user.setLastname(encSurname);
+
+        Cipher cipherrr = Cipher.getInstance("AES");
+        cipherrr.init(Cipher.ENCRYPT_MODE, surnKey);
+        byte[] EncBytAddr = cipherrr.doFinal(user.getAddress().getBytes(StandardCharsets.UTF_8));
+        String encAddr = base64Encode(EncBytAddr);
+        user.setAddress(encAddr);
+
+        Cipher cipherrrr = Cipher.getInstance("AES");
+        cipherrrr.init(Cipher.ENCRYPT_MODE, phoneKey);
+        byte[] EncBytPhone = cipherrrr.doFinal(user.getNumber().getBytes(StandardCharsets.UTF_8));
+        String encPhone = base64Encode(EncBytPhone);
+        user.setNumber(encPhone);
+
+
+        return user;
+    }
+    public User decryptUser(User user) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String keyString = nameKey;
+        byte[] bytes = keyString.getBytes(StandardCharsets.UTF_8);
+        Key namKey = new SecretKeySpec(bytes, "AES");
+
+        String surKey = surnameKey;
+        byte[] surByt = surKey.getBytes(StandardCharsets.UTF_8);
+        Key surnKey = new SecretKeySpec(surByt, "AES");
+
+        String addrKey = addressKey;
+        byte[] addByt = addrKey.getBytes(StandardCharsets.UTF_8);
+        Key addKey = new SecretKeySpec(addByt, "AES");
+
+        String phoKey = phoneKey;
+        byte[] phoByt = phoKey.getBytes(StandardCharsets.UTF_8);
+        Key phoneKey = new SecretKeySpec(phoByt, "AES");
+
+
+        byte[] decodedBytes = base64Decode(user.getFirstname());
+        System.out.println("Proso1");
+        Cipher cipher = Cipher.getInstance("AES");
+        System.out.println("Proso2");System.out.println("Proso1");
+        cipher.init(Cipher.DECRYPT_MODE, namKey);
+        System.out.println("Proso3");
+        byte[] decryptedName = cipher.doFinal(decodedBytes);
+        System.out.println("Proso4");
+        String encryptedName = new String(decryptedName);
+        System.out.println("Proso5");
+        user.setFirstname(encryptedName);
+        System.out.println("Proso6");
+
+        byte[] decodedBytesSurname = base64Decode(user.getLastname());
+        Cipher cipherr = Cipher.getInstance("AES");
+        cipherr.init(Cipher.DECRYPT_MODE, surnKey);
+        byte[] decryptedSurname = cipherr.doFinal(decodedBytesSurname);
+        String encSurname = new String(decryptedSurname);
+        user.setLastname(encSurname);
+        System.out.println("Proso7");
+
+
+        byte[] decodedBytesAddress = base64Decode(user.getAddress());
+        Cipher cipherrr = Cipher.getInstance("AES");
+        cipherrr.init(Cipher.DECRYPT_MODE, surnKey);
+        byte[] decryptedAddress = cipherrr.doFinal(decodedBytesAddress);
+        String encAddr = new String(decryptedAddress);
+        user.setAddress(encAddr);
+
+        byte[] decodedBytesNumber = base64Decode(user.getNumber());
+        Cipher cipherrrr = Cipher.getInstance("AES");
+        cipherrrr.init(Cipher.DECRYPT_MODE, phoneKey);
+        byte[] decryptedPhone = cipherrrr.doFinal(decodedBytesNumber);
+        String encPhone = new String(decryptedPhone);
+        user.setNumber(encPhone);
+        System.out.println("Proso9");
+
+
+        return user;
+    }
 
 
     public void createProject(ProjectDTO request) {
@@ -71,24 +201,26 @@ public class ProjectService {
         return projectRepository.findAll();
     }
 
-    public List<User> getAllActiveProjectWorkers(Project project){
+    public List<User> getAllActiveProjectWorkers(Project project) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         List<WorkingOnProject> workonproj = workOnProjectRepository.getAllByProject(project);
         List<User> users = new ArrayList<>();
         for (WorkingOnProject workingOnProject : workonproj) {
             Date date = new Date();
             java.sql.Date now = new java.sql.Date(date.getTime());
             if(workingOnProject.getEndedWorking().after(now)){
-                users.add(workingOnProject.getUser());
+                User usr = decryptUser(workingOnProject.getUser());
+                users.add(usr);
             }
         }
         return users;
     }
 
-    public List<User> getAllProjectWorkers(Project project){
+    public List<User> getAllProjectWorkers(Project project) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         List<WorkingOnProject> workonproj = workOnProjectRepository.getAllByProject(project);
         List<User> users = new ArrayList<>();
         for (WorkingOnProject workingOnProject : workonproj){
-            users.add(workingOnProject.getUser());
+            User usr = decryptUser(workingOnProject.getUser());
+            users.add(usr);
         }
         return users;
     }
