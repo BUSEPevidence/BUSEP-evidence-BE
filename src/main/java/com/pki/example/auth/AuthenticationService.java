@@ -514,6 +514,18 @@ public class AuthenticationService {
             throw new Error("wrong current password");
         }
     }
+
+    public void changePswrd(User user, NewPasswordDTO dto) throws NoSuchAlgorithmException {
+        if(user.getPassword().equals(hashPassword(dto.currentPassword,user.getSalt()))) {
+            String salt = generateSalt();
+            user.setPassword(hashPassword(dto.newPassword, salt));
+            user.setSalt(salt);
+            userRepository.save(user);
+        }else{
+            logger.info("Change password failed: ");
+            throw new Error("wrong current password");
+        }
+    }
     
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

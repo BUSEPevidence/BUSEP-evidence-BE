@@ -309,6 +309,21 @@ public class UserController {
         return ResponseEntity.ok("Successfully updated password");
     }
 
+    @PreAuthorize("hasAuthority('CHANGE_PASWRD')")
+    @PutMapping("/change-pswrd")
+    public ResponseEntity<String> chngPswrd(@RequestBody
+                                                 NewPasswordDTO dto) throws NoSuchAlgorithmException {
+        User user = authService.getCurrentUser();
+        if(user == null)
+        {
+            logger.info("Update engineer failed");
+            simpMessagingTemplate.convertAndSend("/logger/logg", "Change password failed");
+        }
+        authService.changePswrd(user,dto);
+        return ResponseEntity.ok("{\"Result\": \"" + "Password changed!" + "\"}");
+    }
+
+
     @PreAuthorize("hasAuthority('UPLOAD_CV')")
     @PutMapping("/engineer/upload")
     public ResponseEntity<String> uploadCV(@RequestParam("file") MultipartFile file) throws Exception {
