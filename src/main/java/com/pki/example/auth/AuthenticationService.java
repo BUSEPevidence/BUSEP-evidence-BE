@@ -233,6 +233,7 @@ public class AuthenticationService {
                 User userr = encryptUser(user);
                 String secret = generateSecretKey();
                 userr.setGogAuth(secret);
+                userr.setBlocked(false);
                 userRepository.save(userr);
                 return userr;
             }
@@ -290,7 +291,7 @@ public class AuthenticationService {
                 User userr = encryptUser(user);
                 String secret = generateSecretKey();
                 userr.setGogAuth(secret);
-                userRepository.save(userr);
+                userr.setBlocked(false);
                 userRepository.save(userr);
                 return userr;
         }
