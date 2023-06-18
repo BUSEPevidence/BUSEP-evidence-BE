@@ -44,12 +44,18 @@ import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -58,12 +64,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static org.postgresql.shaded.com.ongres.scram.common.ScramStringFormatting.base64Decode;
+import static org.postgresql.shaded.com.ongres.scram.common.ScramStringFormatting.base64Encode;
 
 @Service
 public class AdminService {
@@ -96,6 +106,123 @@ public class AdminService {
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
     private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
+
+    @Value("${custom.nameKey}")
+    String nameKey;
+
+    @Value("${custom.surnameKey}")
+    String surnameKey;
+
+    @Value("${custom.addressKey}")
+    String addressKey;
+
+    @Value("${custom.phoneKey}")
+    String phoneKey;
+
+
+    public User encryptUser(User user) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String keyString = nameKey;
+        byte[] bytes = keyString.getBytes(StandardCharsets.UTF_8);
+        Key namKey = new SecretKeySpec(bytes, "AES");
+
+        String surKey = surnameKey;
+        byte[] surByt = surKey.getBytes(StandardCharsets.UTF_8);
+        Key surnKey = new SecretKeySpec(surByt, "AES");
+
+        String addrKey = addressKey;
+        byte[] addByt = addrKey.getBytes(StandardCharsets.UTF_8);
+        Key addKey = new SecretKeySpec(addByt, "AES");
+
+        String phoKey = phoneKey;
+        byte[] phoByt = phoKey.getBytes(StandardCharsets.UTF_8);
+        Key phoneKey = new SecretKeySpec(phoByt, "AES");
+
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, namKey);
+        byte[] EncryptedString = cipher.doFinal(user.getFirstname().getBytes(StandardCharsets.UTF_8));
+        String encryptedName = base64Encode(EncryptedString);
+        user.setFirstname(encryptedName);
+
+        Cipher cipherr = Cipher.getInstance("AES");
+        cipherr.init(Cipher.ENCRYPT_MODE, surnKey);
+        byte[] EncBytSur = cipherr.doFinal(user.getLastname().getBytes(StandardCharsets.UTF_8));
+        String encSurname = base64Encode(EncBytSur);
+        user.setLastname(encSurname);
+
+        Cipher cipherrr = Cipher.getInstance("AES");
+        cipherrr.init(Cipher.ENCRYPT_MODE, surnKey);
+        byte[] EncBytAddr = cipherrr.doFinal(user.getAddress().getBytes(StandardCharsets.UTF_8));
+        String encAddr = base64Encode(EncBytAddr);
+        user.setAddress(encAddr);
+
+        Cipher cipherrrr = Cipher.getInstance("AES");
+        cipherrrr.init(Cipher.ENCRYPT_MODE, phoneKey);
+        byte[] EncBytPhone = cipherrrr.doFinal(user.getNumber().getBytes(StandardCharsets.UTF_8));
+        String encPhone = base64Encode(EncBytPhone);
+        user.setNumber(encPhone);
+
+
+        return user;
+    }
+    public User decryptUser(User user) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String keyString = nameKey;
+        byte[] bytes = keyString.getBytes(StandardCharsets.UTF_8);
+        Key namKey = new SecretKeySpec(bytes, "AES");
+
+        String surKey = surnameKey;
+        byte[] surByt = surKey.getBytes(StandardCharsets.UTF_8);
+        Key surnKey = new SecretKeySpec(surByt, "AES");
+
+        String addrKey = addressKey;
+        byte[] addByt = addrKey.getBytes(StandardCharsets.UTF_8);
+        Key addKey = new SecretKeySpec(addByt, "AES");
+
+        String phoKey = phoneKey;
+        byte[] phoByt = phoKey.getBytes(StandardCharsets.UTF_8);
+        Key phoneKey = new SecretKeySpec(phoByt, "AES");
+
+
+        byte[] decodedBytes = base64Decode(user.getFirstname());
+        System.out.println("Proso1");
+        Cipher cipher = Cipher.getInstance("AES");
+        System.out.println("Proso2");System.out.println("Proso1");
+        cipher.init(Cipher.DECRYPT_MODE, namKey);
+        System.out.println("Proso3");
+        byte[] decryptedName = cipher.doFinal(decodedBytes);
+        System.out.println("Proso4");
+        String encryptedName = new String(decryptedName);
+        System.out.println("Proso5");
+        user.setFirstname(encryptedName);
+        System.out.println("Proso6");
+
+        byte[] decodedBytesSurname = base64Decode(user.getLastname());
+        Cipher cipherr = Cipher.getInstance("AES");
+        cipherr.init(Cipher.DECRYPT_MODE, surnKey);
+        byte[] decryptedSurname = cipherr.doFinal(decodedBytesSurname);
+        String encSurname = new String(decryptedSurname);
+        user.setLastname(encSurname);
+        System.out.println("Proso7");
+
+
+        byte[] decodedBytesAddress = base64Decode(user.getAddress());
+        Cipher cipherrr = Cipher.getInstance("AES");
+        cipherrr.init(Cipher.DECRYPT_MODE, surnKey);
+        byte[] decryptedAddress = cipherrr.doFinal(decodedBytesAddress);
+        String encAddr = new String(decryptedAddress);
+        user.setAddress(encAddr);
+
+        byte[] decodedBytesNumber = base64Decode(user.getNumber());
+        Cipher cipherrrr = Cipher.getInstance("AES");
+        cipherrrr.init(Cipher.DECRYPT_MODE, phoneKey);
+        byte[] decryptedPhone = cipherrrr.doFinal(decodedBytesNumber);
+        String encPhone = new String(decryptedPhone);
+        user.setNumber(encPhone);
+        System.out.println("Proso9");
+
+
+        return user;
+    }
+
 
     public X509Certificate generateCert(String keyStoreFileName,String certificateName,String keyStorePassword,X509Certificate cert,KeyPair keyPair)
     {
@@ -717,8 +844,7 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
 
         return "Email sent";
     }
-    public List<User> GetAllRegisterRequests()
-    {
+    public List<User> GetAllRegisterRequests() throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
          String tmp = "";
          List<User> users = userRepository.findAll();
          List<User> retUsers = new ArrayList<>();
@@ -732,7 +858,8 @@ public static List<X509Certificate> getAllCertificatesSignedByCA(String caAlias,
                      tmp = tmp.substring(0, tmp.length() - 1);
                  user.setPassword(tmp);
                  tmp = "";
-                 retUsers.add(user);
+                 User tmpUser = decryptUser(user);
+                 retUsers.add(tmpUser);
 
              }
 

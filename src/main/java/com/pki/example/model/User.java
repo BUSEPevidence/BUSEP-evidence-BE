@@ -57,6 +57,8 @@ public class User implements UserDetails {
 
     private Boolean blocked;
 
+    private String gogAuth;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "userId", referencedColumnName = "id"),
@@ -149,5 +151,13 @@ public class User implements UserDetails {
 
     public void setRefreshTokenExpiration(Date refreshTokenExpiration) {
         this.refreshTokenExpiration = refreshTokenExpiration;
+    }
+
+    public String getGogAuth() {
+        return gogAuth;
+    }
+
+    public void setGogAuth(String gogAuth) {
+        this.gogAuth = gogAuth;
     }
 }

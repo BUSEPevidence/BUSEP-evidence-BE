@@ -19,7 +19,12 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.validation.constraints.Pattern;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -80,7 +85,7 @@ public class ProjectController {
 
     @PreAuthorize("hasAuthority('PROJECT_ACTIVE_WORKERS')")
     @GetMapping("/active-workers")
-    public ResponseEntity<List<ShowUserDTO>> getProjectActiveWorkers(@RequestParam int projectId) {
+    public ResponseEntity<List<ShowUserDTO>> getProjectActiveWorkers(@RequestParam int projectId) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("Get active workers failed, no such project: ");
@@ -256,7 +261,7 @@ public class ProjectController {
 
     @PreAuthorize("hasAuthority('PROJECT_WORKERS')")
     @GetMapping("/workers")
-    public ResponseEntity<List<ShowUserDTO>> projectWorkers(@RequestParam Integer projectId) {
+    public ResponseEntity<List<ShowUserDTO>> projectWorkers(@RequestParam Integer projectId) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("Workers fail ");
@@ -280,7 +285,7 @@ public class ProjectController {
 
     @PreAuthorize("hasAuthority('PROJECT_WORKERS_WITH_DATES')")
     @GetMapping("/workers-with-dates")
-    public ResponseEntity<List<ShowWorkOnProjectWithDatesDTO>> projectWorkersWithDates(@RequestParam Integer projectId) {
+    public ResponseEntity<List<ShowWorkOnProjectWithDatesDTO>> projectWorkersWithDates(@RequestParam Integer projectId) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         Optional<Project> project = projectRepository.findById(projectId);
         if(project.isEmpty()){
             logger.info("Workers with dates failed");

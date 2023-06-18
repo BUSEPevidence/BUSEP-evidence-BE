@@ -3,6 +3,7 @@ package com.pki.example.auth;
 
 import ch.qos.logback.classic.Logger;
 import com.pki.example.controller.AdminController;
+import com.pki.example.dto.AuthenticationRequestFA;
 import com.pki.example.dto.NewPasswordDTO;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
@@ -11,8 +12,11 @@ import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.*;
 import com.pki.example.service.AdminService;
+import com.warrenstrange.googleauth.GoogleAuthenticator;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -21,10 +25,17 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.util.*;
+
+import static org.postgresql.shaded.com.ongres.scram.common.ScramStringFormatting.base64Decode;
+import static org.postgresql.shaded.com.ongres.scram.common.ScramStringFormatting.base64Encode;
 
 
 @Service
@@ -54,6 +65,113 @@ public class AuthenticationService {
 
     private static final Logger logger = (Logger) LoggerFactory.getLogger(AdminController.class);
 
+    @Value("${custom.nameKey}")
+    String nameKey;
+
+    @Value("${custom.surnameKey}")
+    String surnameKey;
+
+    @Value("${custom.addressKey}")
+    String addressKey;
+
+    @Value("${custom.phoneKey}")
+    String phoneKey;
+
+
+    public User encryptUser(User user) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String keyString = nameKey;
+        byte[] bytes = keyString.getBytes(StandardCharsets.UTF_8);
+        Key namKey = new SecretKeySpec(bytes, "AES");
+
+        String surKey = surnameKey;
+        byte[] surByt = surKey.getBytes(StandardCharsets.UTF_8);
+        Key surnKey = new SecretKeySpec(surByt, "AES");
+
+        String addrKey = addressKey;
+        byte[] addByt = addrKey.getBytes(StandardCharsets.UTF_8);
+        Key addKey = new SecretKeySpec(addByt, "AES");
+
+        String phoKey = phoneKey;
+        byte[] phoByt = phoKey.getBytes(StandardCharsets.UTF_8);
+        Key phoneKey = new SecretKeySpec(phoByt, "AES");
+
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, namKey);
+        byte[] EncryptedString = cipher.doFinal(user.getFirstname().getBytes(StandardCharsets.UTF_8));
+        String encryptedName = base64Encode(EncryptedString);
+        user.setFirstname(encryptedName);
+
+        Cipher cipherr = Cipher.getInstance("AES");
+        cipherr.init(Cipher.ENCRYPT_MODE, surnKey);
+        byte[] EncBytSur = cipherr.doFinal(user.getLastname().getBytes(StandardCharsets.UTF_8));
+        String encSurname = base64Encode(EncBytSur);
+        user.setLastname(encSurname);
+
+        Cipher cipherrr = Cipher.getInstance("AES");
+        cipherrr.init(Cipher.ENCRYPT_MODE, addKey);
+        byte[] EncBytAddr = cipherrr.doFinal(user.getAddress().getBytes(StandardCharsets.UTF_8));
+        String encAddr = base64Encode(EncBytSur);
+        user.setAddress(encAddr);
+
+        Cipher cipherrrr = Cipher.getInstance("AES");
+        cipherrrr.init(Cipher.ENCRYPT_MODE, phoneKey);
+        byte[] EncBytPhone = cipherrrr.doFinal(user.getNumber().getBytes(StandardCharsets.UTF_8));
+        String encPhone = base64Encode(EncBytPhone);
+        user.setNumber(encPhone);
+
+
+        return user;
+    }
+    public User decryptUser(User user) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String keyString = nameKey;
+        byte[] bytes = keyString.getBytes(StandardCharsets.UTF_8);
+        Key namKey = new SecretKeySpec(bytes, "AES");
+
+        String surKey = surnameKey;
+        byte[] surByt = surKey.getBytes(StandardCharsets.UTF_8);
+        Key surnKey = new SecretKeySpec(surByt, "AES");
+
+        String addrKey = addressKey;
+        byte[] addByt = addrKey.getBytes(StandardCharsets.UTF_8);
+        Key addKey = new SecretKeySpec(addByt, "AES");
+
+        String phoKey = phoneKey;
+        byte[] phoByt = phoKey.getBytes(StandardCharsets.UTF_8);
+        Key phoneKey = new SecretKeySpec(phoByt, "AES");
+
+
+        byte[] decodedBytes = base64Decode(user.getFirstname());
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, namKey);
+        byte[] decryptedName = cipher.doFinal(decodedBytes);
+        String encryptedName = base64Encode(decryptedName);
+        user.setFirstname(encryptedName);
+
+        byte[] decodedBytesSurname = base64Decode(user.getLastname());
+        Cipher cipherr = Cipher.getInstance("AES");
+        cipherr.init(Cipher.DECRYPT_MODE, surnKey);
+        byte[] decryptedSurname = cipherr.doFinal(decodedBytesSurname);
+        String encSurname = base64Encode(decryptedSurname);
+        user.setLastname(encSurname);
+
+        byte[] decodedBytesAddress = base64Decode(user.getAddress());
+        Cipher cipherrr = Cipher.getInstance("AES");
+        cipherrr.init(Cipher.DECRYPT_MODE, addKey);
+        byte[] decryptedBytes = cipherrr.doFinal(decodedBytesAddress);
+        String encAddr = base64Encode(decryptedBytes);
+        user.setAddress(encAddr);
+
+        byte[] decodedBytesNumber = base64Decode(user.getNumber());
+        Cipher cipherrrr = Cipher.getInstance("AES");
+        cipherrrr.init(Cipher.DECRYPT_MODE, phoneKey);
+        byte[] decryptedPhone = cipherrrr.doFinal(decodedBytesNumber);
+        String encPhone = base64Encode(decryptedPhone);
+        user.setNumber(encPhone);
+
+
+        return user;
+    }
+
 
 
     private static final int SALT_LENGTH = 16;
@@ -73,7 +191,7 @@ public class AuthenticationService {
 
         return Base64.getEncoder().encodeToString(hashBytes);
     }
-    public User register(RegisterRequest request) throws NoSuchAlgorithmException {
+    public User register(RegisterRequest request) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         DenialRequests dr = denialRequestsRepository.findOneByEmail(request.getUsername());
         if(dr != null) {
             if (dr.getDate().before(new Date())) {
@@ -112,8 +230,12 @@ public class AuthenticationService {
                 user.setRoles(retListRole);
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
-                userRepository.save(user);
-                return user;
+                User userr = encryptUser(user);
+                String secret = generateSecretKey();
+                userr.setGogAuth(secret);
+                userr.setBlocked(false);
+                userRepository.save(userr);
+                return userr;
             }
             else
             {
@@ -166,13 +288,22 @@ public class AuthenticationService {
                 user.setRoles(retListRole);
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
-                userRepository.save(user);
-                return user;
+                User userr = encryptUser(user);
+                String secret = generateSecretKey();
+                userr.setGogAuth(secret);
+                userr.setBlocked(false);
+                userRepository.save(userr);
+                return userr;
         }
         logger.info("Register failed: ");
+        simpMessagingTemplate.convertAndSend("/logger/logg", "Success register with username: " + request.getUsername());
         return null;
     }
-
+    public String generateSecretKey() {
+        GoogleAuthenticator gAuth = new GoogleAuthenticator();
+        GoogleAuthenticatorKey key = gAuth.createCredentials();
+        return key.getKey();
+    }
     public String generateNewAccessToken(String refreshToken,String token) {
         User user = userRepository.findOneByUsername(jwtService.extractUsername(token));
         if(user.getRefreshToken().equals(refreshToken) && new Date().before(user.getRefreshTokenExpiration())) {
@@ -226,7 +357,14 @@ public class AuthenticationService {
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
+
+
+    public boolean verifyFA(String secretKey, int token) {
+        GoogleAuthenticator gAuth = new GoogleAuthenticator();
+        return gAuth.authorize(secretKey, token);
+    }
+
+    public AuthenticationResponse authenticate(AuthenticationRequestFA request) throws NoSuchAlgorithmException {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
 
         User saltUser = userRepository.findOneByUsername(request.getUsername());
@@ -259,6 +397,20 @@ public class AuthenticationService {
             if(user.isAdminApprove() == true) {
                 jwtToken = jwtService.generateToken(user);
         }
+
+        boolean check = verifyFA(user.getGogAuth(),Integer.parseInt(request.getFa()));
+
+        if(!check) {
+            simpMessagingTemplate.convertAndSend("/topic/notification", "Failed login with username: " + request.getUsername() + ", invalid 2FA");
+            adminService.SendAdminsEmail("Failed login with username: " + request.getUsername() + ", invalid 2FA");
+            logger.info("Failed login with username: " + request.getUsername() + ", invalid 2FA");
+
+            return AuthenticationResponse.builder()
+                    .token(null)
+                    .refreshToken(null)
+                    .build();
+        }
+
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -390,6 +542,18 @@ public class AuthenticationService {
                 adminLogins.setChangedPassword(true);
                 adminRepository.save(adminLogins);
             }
+            userRepository.save(user);
+        }else{
+            logger.info("Change password failed: ");
+            throw new Error("wrong current password");
+        }
+    }
+
+    public void changePswrd(User user, NewPasswordDTO dto) throws NoSuchAlgorithmException {
+        if(user.getPassword().equals(hashPassword(dto.currentPassword,user.getSalt()))) {
+            String salt = generateSalt();
+            user.setPassword(hashPassword(dto.newPassword, salt));
+            user.setSalt(salt);
             userRepository.save(user);
         }else{
             logger.info("Change password failed: ");
