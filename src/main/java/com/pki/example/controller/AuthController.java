@@ -3,11 +3,13 @@ package com.pki.example.controller;
 import ch.qos.logback.classic.Logger;
 import com.pki.example.auth.AuthenticationService;
 import com.pki.example.auth.JwtService;
+import com.pki.example.dto.AuthenticationRequestFA;
 import com.pki.example.email.model.EmailDetails;
 import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.UserRepository;
 import com.pki.example.service.UserService;
+import com.warrenstrange.googleauth.GoogleAuthenticator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +70,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequest request, HttpServletRequest req) throws NoSuchAlgorithmException {
+    public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequestFA request, HttpServletRequest req) throws NoSuchAlgorithmException {
         AuthenticationResponse authenticationResponse = authenticationService.authenticate(request);
         String token = authenticationResponse.getToken();
         String refreshToken = authenticationResponse.getRefreshToken();
@@ -80,6 +82,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\": \"User not found\"}");
         }
     }
+
 
     @GetMapping("/magic-link")
     public ResponseEntity<String> magicLink(@RequestParam("token") String request, @RequestParam("id") long magicId) throws NoSuchAlgorithmException {

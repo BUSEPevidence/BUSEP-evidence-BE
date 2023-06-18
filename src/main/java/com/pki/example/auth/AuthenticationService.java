@@ -3,6 +3,7 @@ package com.pki.example.auth;
 
 import ch.qos.logback.classic.Logger;
 import com.pki.example.controller.AdminController;
+import com.pki.example.dto.AuthenticationRequestFA;
 import com.pki.example.dto.NewPasswordDTO;
 import com.pki.example.dto.UpdateEngineerDTO;
 import com.pki.example.dto.UpdateUserDTO;
@@ -11,6 +12,8 @@ import com.pki.example.email.service.IEmailService;
 import com.pki.example.model.*;
 import com.pki.example.repo.*;
 import com.pki.example.service.AdminService;
+import com.warrenstrange.googleauth.GoogleAuthenticator;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -228,6 +231,8 @@ public class AuthenticationService {
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
                 User userr = encryptUser(user);
+                String secret = generateSecretKey();
+                userr.setGogAuth(secret);
                 userRepository.save(userr);
                 return userr;
             }
@@ -283,6 +288,9 @@ public class AuthenticationService {
                 String activationCode = jwtService.generateCodeForRegister(user);
                 user.setActivationCode(activationCode);
                 User userr = encryptUser(user);
+                String secret = generateSecretKey();
+                userr.setGogAuth(secret);
+                userRepository.save(userr);
                 userRepository.save(userr);
                 return userr;
         }
@@ -290,7 +298,11 @@ public class AuthenticationService {
         simpMessagingTemplate.convertAndSend("/logger/logg", "Success register with username: " + request.getUsername());
         return null;
     }
-
+    public String generateSecretKey() {
+        GoogleAuthenticator gAuth = new GoogleAuthenticator();
+        GoogleAuthenticatorKey key = gAuth.createCredentials();
+        return key.getKey();
+    }
     public String generateNewAccessToken(String refreshToken,String token) {
         User user = userRepository.findOneByUsername(jwtService.extractUsername(token));
         if(user.getRefreshToken().equals(refreshToken) && new Date().before(user.getRefreshTokenExpiration())) {
@@ -344,7 +356,14 @@ public class AuthenticationService {
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) throws NoSuchAlgorithmException {
+
+
+    public boolean verifyFA(String secretKey, int token) {
+        GoogleAuthenticator gAuth = new GoogleAuthenticator();
+        return gAuth.authorize(secretKey, token);
+    }
+
+    public AuthenticationResponse authenticate(AuthenticationRequestFA request) throws NoSuchAlgorithmException {
         System.out.println(request.getUsername() + " " + request.getPassword() + " iz servisa");
 
         User saltUser = userRepository.findOneByUsername(request.getUsername());
@@ -377,6 +396,20 @@ public class AuthenticationService {
             if(user.isAdminApprove() == true) {
                 jwtToken = jwtService.generateToken(user);
         }
+
+        boolean check = verifyFA(user.getGogAuth(),Integer.parseInt(request.getFa()));
+
+        if(!check) {
+            simpMessagingTemplate.convertAndSend("/topic/notification", "Failed login with username: " + request.getUsername() + ", invalid 2FA");
+            adminService.SendAdminsEmail("Failed login with username: " + request.getUsername() + ", invalid 2FA");
+            logger.info("Failed login with username: " + request.getUsername() + ", invalid 2FA");
+
+            return AuthenticationResponse.builder()
+                    .token(null)
+                    .refreshToken(null)
+                    .build();
+        }
+
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
